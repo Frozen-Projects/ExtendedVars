@@ -1247,6 +1247,11 @@ bool UExtendedVarsBPLibrary::Time_Counter_To_FDateTime(FDateTime& Out_Time, FStr
 
 FDateTime UExtendedVarsBPLibrary::Increment_Date(FDateTime Start, int32 In_Years, int32 In_Months, int32 In_Days)
 {
+    if (Start < FDateTime(1970, 1, 1))
+    {
+        return FDateTime();
+    }
+
     using namespace std::chrono;
     
     system_clock::time_point now;
