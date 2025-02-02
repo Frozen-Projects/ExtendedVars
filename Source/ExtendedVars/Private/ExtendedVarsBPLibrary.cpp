@@ -1247,20 +1247,16 @@ bool UExtendedVarsBPLibrary::Time_Counter_To_FDateTime(FDateTime& Out_Time, FStr
 
 FDateTime UExtendedVarsBPLibrary::Increment_Date(FDateTime Start, int32 In_Years, int32 In_Months, int32 In_Days)
 {
-    FDateTime TargetTime = (Start == FDateTime()) ? FDateTime::Now() : Start;
+    const FDateTime TargetTime = (Start == FDateTime()) ? FDateTime::Now() : Start;
 
     int32 Year = TargetTime.GetYear() + In_Years;
     int32 Month = TargetTime.GetMonth();
     int32 Day = TargetTime.GetDay();
-    int32 Hour = TargetTime.GetHour();
-    int32 Minute = TargetTime.GetMinute();
-    int32 Second = TargetTime.GetSecond();
-    int32 Millisecond = TargetTime.GetMillisecond();
 
     // Convert month to zero-based, add In_Months, then carry over to Year
     const int32 ZeroBasedMonth = (Month - 1) + In_Months;
-    Year += ZeroBasedMonth / 12;                                        // carry over
-    Month = (ZeroBasedMonth % 12) + 1;                                  // back to 1..12
+    Year += ZeroBasedMonth / 12;                                            // carry over
+    Month = (ZeroBasedMonth % 12) + 1;                                      // back to 1..12
 
     // Clamp Day if it exceeds the new month's length. e.g., from Jan 31 to a month with only 30 days
     const int32 DaysInNewMonth = FDateTime::DaysInMonth(Year, Month);
@@ -1269,11 +1265,9 @@ FDateTime UExtendedVarsBPLibrary::Increment_Date(FDateTime Start, int32 In_Years
         Day = DaysInNewMonth;
     }
 
-    // Construct an intermediate date/time
-    FDateTime Intermediate(Year, Month, Day, Hour, Minute, Second, Millisecond);
-
-    // Add days using an FTimespan (this handles month overflows automatically)
-    FTimespan AdditionalDays(In_Days, 0, 0, 0);                        // (days, hours, minutes, seconds)
+    FDateTime Intermediate(Year, Month, Day, TargetTime.GetHour(), TargetTime.GetMinute(), TargetTime.GetSecond(), TargetTime.GetMillisecond());
+    FTimespan AdditionalDays(In_Days, 0, 0, 0);
+    
     return Intermediate + AdditionalDays;
 }
 
