@@ -272,10 +272,13 @@ class UExtendedVarsBPLibrary : public UBlueprintFunctionLibrary
 	UFUNCTION(BlueprintPure, meta = (DisplayName = "Round Next Float", ToolTip = "", Keywords = "float, round, next"), Category = "Frozen Forest|Extended Variables|Float")
 	static EXTENDEDVARS_API float Float_Round_Next(float TargetFloat, double Decimal);
 	
-	// Time Group.
+	// Date & Time Group.
 
 	UFUNCTION(BlueprintPure, meta = (DisplayName = "Time Counter To FDateTime", ToolTip = "", Keywords = "string, fstring, parse, date, time, convert, to"), Category = "Frozen Forest|Extended Variables|Time")
 	static EXTENDEDVARS_API bool Time_Counter_To_FDateTime(FDateTime& Out_Time, FString In_Time, FString Delimiter, EStringToDate ConvertType);
+
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Increment Date", ToolTip = "If there is no \"Start\" input, function will increment \"Now\".", Keywords = "date, time, increment, auto, calculate"), Category = "FF_MBedTLS")
+	static EXTENDEDVARS_API FDateTime Increment_Date(FDateTime Start, int32 In_Years, int32 In_Months, int32 In_Days);
 
 	// Render Group.
 

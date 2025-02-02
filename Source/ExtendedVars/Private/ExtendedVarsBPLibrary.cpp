@@ -1245,6 +1245,60 @@ bool UExtendedVarsBPLibrary::Time_Counter_To_FDateTime(FDateTime& Out_Time, FStr
     }
 }
 
+FDateTime UExtendedVarsBPLibrary::Increment_Date(FDateTime Start, int32 In_Years, int32 In_Months, int32 In_Days)
+{
+    using namespace std::chrono;
+    
+    system_clock::time_point now;
+
+    if (Start == FDateTime())
+    {
+        now = system_clock::now();
+    }
+
+    else
+    {
+        int64 UnixSeconds = Start.ToUnixTimestamp();
+        int32 ExtraMilliseconds = Start.GetMillisecond();
+        int64 TotalMilliseconds = UnixSeconds * 1000 + ExtraMilliseconds;
+        now = system_clock::time_point(milliseconds(TotalMilliseconds));
+    }
+
+    // 1. Separate 'day' and 'time-of-day' (fractional day).
+    time_point floorDays = floor<days>(now);                       // Truncates to whole days
+    time_point sysDaysNow = time_point_cast<days>(floorDays);      // A sys_days representation
+   
+    // 2. Convert sys_days -> year_month_day
+    year_month_day ymd(sysDaysNow);
+
+    // 3. Add the desired years, months, and days as calendar arithmetic
+    ymd += years(In_Years);
+    ymd += months(In_Months);
+    ymd = year_month_day(sys_days(ymd) + days(In_Days));
+
+    // 4. Convert back to sys_days, then add the time-of-day back
+    sys_days newSysDays = sys_days(ymd);       // This is a day-precision time_point in UTC
+    auto timeOfDay = now - floorDays;          // The leftover hours, minutes, seconds, ms
+    auto future = newSysDays + timeOfDay;      // Reattach the original time of day
+
+    // Convert to time_t for localtime
+    std::time_t future_c = system_clock::to_time_t(future);
+    std::tm local_tm = *std::localtime(&future_c);
+
+    // Extract milliseconds for demonstration
+    auto future_sec = floor<seconds>(future);
+    int32 MilliSeconds = duration_cast<milliseconds>(future - future_sec).count();
+
+    int32 Year = local_tm.tm_year + 1900;
+    int32 Month = local_tm.tm_mon + 1;
+    int32 Day = local_tm.tm_mday;
+    int32 Hour = local_tm.tm_hour;
+    int32 Minute = local_tm.tm_min;
+    int32 Second = local_tm.tm_sec;
+
+    return FDateTime(Year, Month, Day, Hour, Minute, Second, MilliSeconds);
+}
+
 // Render Group.
 
 UTextureRenderTarget2D* UExtendedVarsBPLibrary::Widget_To_TRT2D(FString& OutCode, UUserWidget* InWidget, FVector2D InDrawSize)
