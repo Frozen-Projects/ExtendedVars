@@ -16,11 +16,7 @@ public class ExtendedVars : ModuleRules
 			new string[]
 			{
 				"Core",
-                "RHI",				// FRHICommandListImmediate and Enqueue Rendering Commands
-				"RenderCore",		// FRHICommandListImmediate and Enqueue Rendering Commands
-				"UMG",
                 "MediaAssets",
-                "ImageWrapper",
             }
 			);
 			
@@ -31,7 +27,14 @@ public class ExtendedVars : ModuleRules
 				"Engine",
 				"Slate",
 				"SlateCore",
-			}
+                "RHI",				// FRHICommandListImmediate and Enqueue Rendering Commands
+				"RenderCore",		// FRHICommandListImmediate and Enqueue Rendering Commands
+				"UMG",
+                "ImageWrapper",
+                "Json",
+                "JsonUtilities",
+                "JsonBlueprintUtilities",
+            }
 			);
 		
 		DynamicallyLoadedModuleNames.AddRange(

@@ -1091,6 +1091,22 @@ bool UExtendedVarsBPLibrary::Base64_To_String(FString& Out_Decoded, FString In_B
     return true;
 }
 
+FString UExtendedVarsBPLibrary::Beautify_Json(FString In_Json)
+{
+    TSharedPtr<FJsonObject> JsonObject = MakeShareable(new FJsonObject());
+    TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(In_Json);
+
+    if (!FJsonSerializer::Deserialize(Reader, JsonObject) && JsonObject.IsValid())
+    {
+        return FString();
+    }
+
+    FString BeautifiedJson;
+    TSharedRef<TJsonWriter<TCHAR, TPrettyJsonPrintPolicy<TCHAR>>> Writer = TJsonWriterFactory<TCHAR, TPrettyJsonPrintPolicy<TCHAR>>::Create(&BeautifiedJson);
+
+    return FJsonSerializer::Serialize(JsonObject.ToSharedRef(), Writer) ? BeautifiedJson : FString();
+}
+
 // Integer Group.
 
 uint8 UExtendedVarsBPLibrary::Int32_To_Byte(int32 In_Number)

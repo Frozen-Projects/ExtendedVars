@@ -247,6 +247,9 @@ class UExtendedVarsBPLibrary : public UBlueprintFunctionLibrary
 	UFUNCTION(BlueprintPure, meta = (DisplayName = "Base64 To String", ToolTip = "", Keywords = "string, fstring, convert, to, base64"), Category = "Frozen Forest|Extended Variables|String")
 	static EXTENDEDVARS_API bool Base64_To_String(FString& Out_Decoded, FString In_Hex, bool bUseUrl);
 
+	UFUNCTION(BlueprintPure, meta = (DisplayName = "Beautify Json", ToolTip = "", Keywords = "string, fstring, convert, to, base64"), Category = "Frozen Forest|Extended Variables|String")
+	static EXTENDEDVARS_API FString Beautify_Json(FString In_Json);
+
 	// Integer Group.
 
 	UFUNCTION(BlueprintPure, meta = (DisplayName = "Number To Byte", ToolTip = "It converts number to a byte form.", Keywords = "byte, string, fstring, convert"), Category = "Frozen Forest|Extended Variables|Integer")
