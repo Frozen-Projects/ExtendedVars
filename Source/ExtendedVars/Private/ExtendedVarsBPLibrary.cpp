@@ -527,7 +527,7 @@ bool UExtendedVarsBPLibrary::Read_File_From_Path_32(TArray<uint8>& Out_Bytes, FS
             return false;
         }
 
-        uint8* Buffer = (uint8*)malloc(FileSize);
+        uint8* Buffer = (uint8*)FMemory::Malloc(FileSize);
         fread(Buffer, sizeof(uint8), FileSize, File);
         
         ByteArray.SetNum(FileSize);
