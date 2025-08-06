@@ -106,7 +106,7 @@ UDELEGATE(BlueprintAuthorityOnly)
 DECLARE_DYNAMIC_DELEGATE_ThreeParams(FDelegateBytes_32, bool, bIsSuccessfull, FString, ErrorCode, const TArray<uint8>&, Out_Bytes);
 
 UDELEGATE(BlueprintAuthorityOnly)
-DECLARE_DYNAMIC_DELEGATE_FourParams(FDelegateImageBuffer, bool, bIsSuccessfull, FString, ErrorCode, const TArray<uint8>&, Out_Bytes, FVector2D, Out_Size);
+DECLARE_DYNAMIC_DELEGATE_FiveParams(FDelegateImageBuffer, bool, bIsSuccessfull, FString, ErrorCode, const TArray<uint8>&, Out_Bytes, FVector2D, Out_Size, EGammaSpaceBp, OutGammaSpaceBp);
 
 UDELEGATE(BlueprintAuthorityOnly)
 DECLARE_DYNAMIC_DELEGATE_ThreeParams(FDelegateTexture2D, bool, bIsSuccessfull, FString, ErrorCode, UTexture2D*, Out);
@@ -116,18 +116,14 @@ class UExtendedVarsBPLibrary : public UBlueprintFunctionLibrary
 {
 	GENERATED_UCLASS_BODY()
 
-	// Render Callbacks
-
-	static EXTENDEDVARS_API bool Encode_Api_Old(TArray<uint8>& Encoded_Data, FString& Out_Code, void* Texture_Data, EImageExtensions CompressFormat, int32 Size_X, int32 Size_Y, size_t Lenght);
-
-	static EXTENDEDVARS_API bool Encode_Api_New(TArray<uint8>& Encoded_Data, FString& Out_Code, void* Texture_Data, EImageExtensions CompressFormat, int32 Size_X, int32 Size_Y, size_t Lenght, EGammaSpace GammaSpace);
-
-	// Fonts Group.
+#pragma region Fonts_Group
 
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Runtime Font Load", ToolTip = "", Keywords = "runtime, font, load"), Category = "Frozen Forest|Extended Variables|Font")
 	static EXTENDEDVARS_API URuntimeFont* Runtime_Font_Load(TArray<uint8> In_Bytes, FString FontName = "RuntimeFont");
 
-	// Sorters.
+#pragma endregion Fonts_Group
+
+#pragma region Sorters
 
 	UFUNCTION(BlueprintPure, meta = (DisplayName = "Sort Strings", ToolTip = "", Keywords = "string, fstring, ascending, descending, sort"), Category = "Frozen Forest|Extended Variables|Sorters")
 	static EXTENDEDVARS_API TArray<FString> Sort_String(TArray<FString> TargetArray, bool bIsDescending);
@@ -144,7 +140,9 @@ class UExtendedVarsBPLibrary : public UBlueprintFunctionLibrary
 	UFUNCTION(BlueprintPure, meta = (DisplayName = "Sort Times", ToolTip = "", Keywords = "sort, times, ascending, descending"), Category = "Frozen Forest|Extended Variables|Sorters")
 	static EXTENDEDVARS_API TArray<FDateTime> Sort_Time(TArray<FDateTime> TargetArray, bool bIsDescending);
 
-	// Read Group.
+#pragma endregion Sorters
+
+#pragma region Read_Group
 
 	UFUNCTION(BlueprintPure, meta = (DisplayName = "Android Path Helper", ToolTip = "This node automatically gives Internal Storage absolute path. So, you just need to define sub-folder and file. Example: Download/sample.pdf", Keywords = "android, ios, mobile, folder, file, path, helper, absolute"), Category = "Frozen Forest|Extended Variables|Read")
 	static EXTENDEDVARS_API FString Android_Path_Helper(FString In_FileName);
@@ -164,12 +162,16 @@ class UExtendedVarsBPLibrary : public UBlueprintFunctionLibrary
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Read Text from Path", ToolTip = "You need to use absolute path.", Keywords = "read, load, path, bytes, import, text"), Category = "Frozen Forest|Extended Variables|Read")
 	static EXTENDEDVARS_API bool Read_Text_From_Path(FString& Out_String, FString In_Path);
 
-	// Write Group.
+#pragma endregion Read_Group
+
+#pragma region Write_Group
 
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Write File To Path", ToolTip = "You need to use absolute path.", Keywords = "write, path, bytes, export"), Category = "Frozen Forest|Extended Variables|Write")
 	static EXTENDEDVARS_API bool Write_File_To_Path(TArray<uint8> In_Bytes, FString In_Path);
 
-	// Bytes Group | Convert To.
+#pragma endregion Write_Group
+
+#pragma region Bytes_Group
 
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Bytes To Bytes64 Object", ToolTip = "", Keywords = "bytes, object, x64"), Category = "Frozen Forest|Extended Variables|Bytes")
 	static EXTENDEDVARS_API bool Bytes_To_Object(UBytesObject_64*& Out_Bytes_Object, TArray<uint8> In_Bytes);
@@ -192,8 +194,6 @@ class UExtendedVarsBPLibrary : public UBlueprintFunctionLibrary
 	UFUNCTION(BlueprintPure, meta = (DisplayName = "Bytes x86 To UTF8", Keywords = "bytes, string, fstring, convert, to, utf8"), Category = "Frozen Forest|Extended Variables|Bytes")
 	static EXTENDEDVARS_API FString Bytes_x86_To_UTF8(TArray<uint8> In_Bytes);
 
-	// Bytes Group | Convert From.
-
 	UFUNCTION(BlueprintPure, meta = (DisplayName = "Hex To Bytes x64", Keywords = "bytes, string, fstring, convert, to, hex"), Category = "Frozen Forest|Extended Variables|Bytes")
 	static EXTENDEDVARS_API UBytesObject_64* Hex_To_Bytes_x64(FString In_Hex);
 
@@ -215,7 +215,9 @@ class UExtendedVarsBPLibrary : public UBlueprintFunctionLibrary
 	UFUNCTION(BlueprintPure, meta = (DisplayName = "Detect Image Extension", Keywords = "detect, image, extension, bytes, buffer"), Category = "Frozen Forest|Extended Variables|Bytes")
 	static EXTENDEDVARS_API EImageExtensions DetectImageExtension(TArray<uint8> In_Bytes);
 
-	// String Group.
+#pragma endregion Bytes_Group
+
+#pragma region String_Group
 
 	UFUNCTION(BlueprintPure, meta = (DisplayName = "FDateTime To String", ToolTip = "", Keywords = "string, fstring, parse, date, time, convert, to"), Category = "Frozen Forest|Extended Variables|String")
 	static EXTENDEDVARS_API FString FDateTime_To_String(FDateTime In_Time, FString CustomFormat, bool bUseIso8601 = true);
@@ -250,7 +252,9 @@ class UExtendedVarsBPLibrary : public UBlueprintFunctionLibrary
 	UFUNCTION(BlueprintPure, meta = (DisplayName = "Beautify Json", ToolTip = "", Keywords = "string, fstring, convert, to, base64"), Category = "Frozen Forest|Extended Variables|String")
 	static EXTENDEDVARS_API FString Beautify_Json(FString In_Json);
 
-	// Integer Group.
+#pragma endregion String_Group
+
+#pragma region Int_Group
 
 	UFUNCTION(BlueprintPure, meta = (DisplayName = "Number To Byte", ToolTip = "It converts number to a byte form.", Keywords = "byte, string, fstring, convert"), Category = "Frozen Forest|Extended Variables|Integer")
 	static EXTENDEDVARS_API uint8 Int32_To_Byte(int32 In_Number);
@@ -264,7 +268,9 @@ class UExtendedVarsBPLibrary : public UBlueprintFunctionLibrary
 	UFUNCTION(BlueprintPure, meta = (DisplayName = "Int32 Truncate To Whole (Small)", Keywords = "int32, truncate, truncation, full, whole, small"), Category = "Frozen Forest|Extended Variables|Integer")
 	static EXTENDEDVARS_API int32 Int32_Truncate_To_Small(int32 TargetInteger);
 
-	// Float/Double Group.
+#pragma endregion Int_Group
+
+#pragma region Float_Group
 
 	UFUNCTION(BlueprintPure, meta = (DisplayName = "Float Precision", ToolTip = "", Keywords = "float, get, precision"), Category = "Frozen Forest|Extended Variables|Float")
 	static EXTENDEDVARS_API float Float_Precision(float TargetFloat, int32 Precision);
@@ -274,8 +280,10 @@ class UExtendedVarsBPLibrary : public UBlueprintFunctionLibrary
 
 	UFUNCTION(BlueprintPure, meta = (DisplayName = "Round Next Float", ToolTip = "", Keywords = "float, round, next"), Category = "Frozen Forest|Extended Variables|Float")
 	static EXTENDEDVARS_API float Float_Round_Next(float TargetFloat, double Decimal);
+
+#pragma endregion Float_Group
 	
-	// Date & Time Group.
+#pragma region Time_Group
 
 	UFUNCTION(BlueprintPure, meta = (DisplayName = "Time Counter To FDateTime", ToolTip = "", Keywords = "string, fstring, parse, date, time, convert, to"), Category = "Frozen Forest|Extended Variables|Time")
 	static EXTENDEDVARS_API bool Time_Counter_To_FDateTime(FDateTime& Out_Time, FString In_Time, FString Delimiter, EStringToDate ConvertType);
@@ -283,7 +291,17 @@ class UExtendedVarsBPLibrary : public UBlueprintFunctionLibrary
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Increment Date", ToolTip = "If there is no \"Start\" input, function will increment \"Now\".", Keywords = "date, time, increment, auto, calculate"), Category = "FF_MBedTLS")
 	static EXTENDEDVARS_API FDateTime Increment_Date(FDateTime Start, int32 In_Years, int32 In_Months, int32 In_Days);
 
-	// Render Group.
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Get Date With Timezone", Keywords = "get, date, time, zone, timezone, geo, geography, geographic, day, month, short, long"), Category = "Frozen Forest|Extended Variables|DateTime")
+	static EXTENDEDVARS_API bool GetDateTimeWithZone(FString& Out_Print, FString& Out_Zone, FString& Out_Geo, FString& Out_Day, FString& Out_Month, bool bUseShort);
+
+#pragma endregion Time_Group
+
+#pragma region Render_Group
+
+	static EXTENDEDVARS_API bool Encode_Api_Old(TArray<uint8>& Encoded_Data, FString& Out_Code, void* Texture_Data, EImageExtensions CompressFormat, int32 Size_X, int32 Size_Y, size_t Lenght);
+	static EXTENDEDVARS_API bool Encode_Api_New(TArray<uint8>& Encoded_Data, FString& Out_Code, void* Texture_Data, EImageExtensions CompressFormat, int32 Size_X, int32 Size_Y, size_t Lenght, EGammaSpace GammaSpace);
+	static EXTENDEDVARS_API EGammaSpaceBp ConvertGammaSpaceBp(EGammaSpace InGammaSpace);
+	static EXTENDEDVARS_API EGammaSpace ConvertGammaSpace(EGammaSpaceBp InGammaSpaceBp);
 
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Widget To Texture Render Target 2D", Keywords = "texture, render, target, 2d, widget, convert"), Category = "Frozen Forest|Extended Variables|Render")
 	static EXTENDEDVARS_API UTextureRenderTarget2D* Widget_To_TRT2D(FString& OutCode, UUserWidget* InWidget, FVector2D InDrawSize);
@@ -291,8 +309,8 @@ class UExtendedVarsBPLibrary : public UBlueprintFunctionLibrary
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Texture Render Target 2D to UTexture2D", Keywords = "texture, render, target, widget, convert"), Category = "Frozen Forest|Extended Variables|Render")
 	static EXTENDEDVARS_API void TRT2D_To_T2D(FDelegateTexture2D Delegate_T2D, UTextureRenderTarget2D* In_TRT_2D);
 
-	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Export Texture2D As Bitmap", ToolTip = "If \"In_Path\" is not defined, it will export it to \Project's saved directory/Temp\".", Keywords = "t2d, texture, texture2d, utexture2d, export, bitmap, bmp"), Category = "Frozen Forest|Extended Variables|Render")
-	static EXTENDEDVARS_API bool Export_T2D_File(FString& Out_Path, UTexture2D* Texture, FString In_Path, EImageExtensions Extension = EImageExtensions::Ext_BMP);
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Export Image Buffer as File", ToolTip = "If \"In_Path\" is not defined, it will export it to \Project's saved directory/Temp\".", Keywords = "t2d, texture, texture2d, utexture2d, export, bitmap, bmp"), Category = "Frozen Forest|Extended Variables|Render")
+	static EXTENDEDVARS_API bool Export_ImageBuf_File(FString& Out_Path, TArray<uint8> ImageBuffer, FVector2D ImageRes, FString In_Path, EGammaSpaceBp GammaSpaceBp, EImageExtensions Extension = EImageExtensions::Ext_BMP);
 
 	UFUNCTION(BlueprintPure, meta = (DisplayName = "Export Texture2D As Colors", Keywords = "t2d, texture, texture2d, utexture2d, get, export, color, fcolor, array"), Category = "Frozen Forest|Extended Variables|Render")
 	static EXTENDEDVARS_API bool Export_T2D_Colors(TArray<FColor>& Out_Array, UTexture2D* Texture);
@@ -301,7 +319,7 @@ class UExtendedVarsBPLibrary : public UBlueprintFunctionLibrary
 	static EXTENDEDVARS_API bool Export_T2D_Bytes(TArray<uint8>& Out_Array, FString& Out_Code, UTexture2D* Texture);
 
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Export Texture with Render Thread", ToolTip = "In extension is none, function won't use \"ImageWrapperModule\". So, API doesn't matter.", Keywords = "t2d, trt2d, texture, texture2d, utexture2d, render, target, media, get, export, byte, bytes, array, render, thread"), Category = "Frozen Forest|Extended Variables|Render")
-	static EXTENDEDVARS_API void Export_Texture_Bytes_Render_Thread(FDelegateImageBuffer DelegateImageBuffer, UTexture* TargetTexture, bool bUseOldApi, EImageExtensions Extension = EImageExtensions::Ext_None);
+	static EXTENDEDVARS_API void Export_Texture_Bytes_RT(FDelegateImageBuffer DelegateImageBuffer, UTexture* TargetTexture, bool bUseOldApi, EImageExtensions Extension = EImageExtensions::Ext_None);
 
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Decompress Image", ToolTip = "", Keywords = "image, texture, render, decompress"), Category = "Frozen Forest|Extended Variables|Render")
 	static EXTENDEDVARS_API void DecompressImage(FDelegateImageBuffer DelegateImageBuffer, TArray<uint8> In_Bytes);
@@ -312,12 +330,13 @@ class UExtendedVarsBPLibrary : public UBlueprintFunctionLibrary
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Import Texture2D From Bytes (Game Thread - Low Level)", Keywords = "t2d, texture, texture2d, utexture2d, import, create, bytes, low, level"), Category = "Frozen Forest|Extended Variables|Render")
 	static EXTENDEDVARS_API bool Import_T2D_Bytes_LowLevel(UTexture2D*& Out_Texture, TArray<uint8> In_Bytes, FVector2D Size, bool bUseSrgb);
 
-	// Logs.
+#pragma endregion Render_Group
+
+#pragma region Logs
 
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Log String", Keywords = "log, display, string, result, return, code"), Category = "Frozen Forest|Extended Variables|Logs")
-	static void LogString(int32 InLogLevel, FString Log);
+	static EXTENDEDVARS_API void LogString(int32 InLogLevel, FString Log);
 
-	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Get Date With Timezone", Keywords = "get, date, time, zone, timezone, geo, geography, geographic, day, month, short, long"), Category = "Frozen Forest|Extended Variables|DateTime")
-	static bool GetDateTimeWithZone(FString& Out_Print, FString& Out_Zone, FString& Out_Geo, FString& Out_Day, FString& Out_Month, bool bUseShort);
+#pragma endregion Logs
 
 };

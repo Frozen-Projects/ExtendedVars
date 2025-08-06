@@ -100,3 +100,13 @@ enum class EImageExtensions : uint8
 	EXT_PNG			UMETA(DisplayName = "PNG"),
 };
 ENUM_CLASS_FLAGS(EImageExtensions)
+
+UENUM(BlueprintType)
+enum class EGammaSpaceBp : uint8
+{
+	Invalid		UMETA(DisplayName = "Invalid"),
+	Linear		UMETA(DisplayName = "Linear"),
+	Pow22		UMETA(DisplayName = "Pow22"),
+	sRGB		UMETA(DisplayName = "sRGB"),
+};
+ENUM_CLASS_FLAGS(EGammaSpaceBp)
