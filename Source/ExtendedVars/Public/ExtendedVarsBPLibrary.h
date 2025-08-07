@@ -167,7 +167,7 @@ class UExtendedVarsBPLibrary : public UBlueprintFunctionLibrary
 #pragma region Write_Group
 
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Write File To Path", ToolTip = "You need to use absolute path.\nBytes need to contain headers.", Keywords = "write, path, bytes, export"), Category = "Frozen Forest|Extended Variables|Write")
-	static EXTENDEDVARS_API bool Write_File_To_Path(TArray<uint8> In_Bytes, FString In_Path);
+	static EXTENDEDVARS_API bool Write_File_To_Path(FString& Out_Code, TArray<uint8> In_Bytes, FString In_Path);
 
 #pragma endregion Write_Group
 
@@ -320,10 +320,10 @@ class UExtendedVarsBPLibrary : public UBlueprintFunctionLibrary
 	static EXTENDEDVARS_API void Export_Texture_Bytes_RT(FDelegateImageBuffer DelegateImageBuffer, UTexture* TargetTexture);
 
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Encodee Image (Old)", ToolTip = "", Keywords = "image, texture, render, decompress"), Category = "Frozen Forest|Extended Variables|Render")
-	static EXTENDEDVARS_API void Encode_Api_Old(FDelegateImageBuffer DelegateImageBuffer, FString& Out_Code, TArray<uint8> Texture_Data, FVector2D ImageRes, EImageExtensions CompressFormat);
+	static EXTENDEDVARS_API void Encode_Api_Old(FDelegateImageBuffer DelegateImageBuffer, TArray<uint8> Texture_Data, FVector2D ImageRes, EImageExtensions CompressFormat);
 	
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Encode Image (New)", ToolTip = "", Keywords = "image, texture, render, decompress"), Category = "Frozen Forest|Extended Variables|Render")
-	static EXTENDEDVARS_API void Encode_Api_New(FDelegateImageBuffer DelegateImageBuffer, FString& Out_Code, TArray<uint8> Texture_Data, FVector2D ImageRes, EImageExtensions CompressFormat, EGammaSpaceBp GammaSpaceBp);
+	static EXTENDEDVARS_API void Encode_Api_New(FDelegateImageBuffer DelegateImageBuffer, TArray<uint8> Texture_Data, FVector2D ImageRes, EImageExtensions CompressFormat, EGammaSpaceBp GammaSpaceBp);
 
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Decompress Image", ToolTip = "", Keywords = "image, texture, render, decompress"), Category = "Frozen Forest|Extended Variables|Render")
 	static EXTENDEDVARS_API void DecompressImage(FDelegateImageBuffer DelegateImageBuffer, TArray<uint8> In_Bytes);
