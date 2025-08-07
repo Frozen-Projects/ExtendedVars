@@ -476,7 +476,27 @@ bool UExtendedVarsBPLibrary::Write_File_To_Path(TArray<uint8> In_Bytes, FString 
 
 #pragma region Bytes_Group
 
-bool UExtendedVarsBPLibrary::Bytes_To_Object(UBytesObject_64*& Out_Bytes_Object, TArray<uint8> In_Bytes)
+int64 UBytesObject_64::GetSize()
+{
+    return ByteArray.Num();
+}
+
+TArray<uint8> UBytesObject_64::GetBytes()
+{
+    const size_t Size = ByteArray.Num();
+
+    if (Size > TNumericLimits<int32>::Max())
+    {
+        return TArray<uint8>();
+    }
+
+    TArray<uint8> Out_Bytes;
+    Out_Bytes.SetNumUninitialized(Size);
+    FMemory::Memcpy(Out_Bytes.GetData(), ByteArray.GetData(), Size);
+    return Out_Bytes;
+}
+
+bool UExtendedVarsBPLibrary::Bytes_To_Bytes_x64(UBytesObject_64*& Out_Bytes_Object, TArray<uint8> In_Bytes)
 {
     if (In_Bytes.Num() == 0)
     {
@@ -1246,165 +1266,6 @@ bool UExtendedVarsBPLibrary::GetDateTimeWithZone(FString& Out_Print, FString& Ou
 
 #pragma region Render_Group
 
-bool UExtendedVarsBPLibrary::Encode_Api_Old(TArray<uint8>& Encoded_Data, FString& Out_Code, void* Texture_Data, EImageExtensions CompressFormat, int32 Size_X, int32 Size_Y, size_t Lenght)
-{
-    IImageWrapperModule& ImageWrapperModule = FModuleManager::LoadModuleChecked<IImageWrapperModule>(FName("ImageWrapper"));
-
-    bool bUseRgba = false;
-    FString CompressedFormatString = "";
-    EImageFormat ImageFormat = EImageFormat::Invalid;
-
-    switch (CompressFormat)
-    {
-    case EImageExtensions::Ext_None:
-
-        Out_Code = "You have to define a proper extension for encoding like JPG/PNG/BMP.";
-        return false;
-
-    case EImageExtensions::Ext_BMP:
-
-        bUseRgba = false;
-        CompressedFormatString = "BMP";
-        ImageFormat = EImageFormat::BMP;
-
-        break;
-
-    case EImageExtensions::EXT_JPEG:
-
-        bUseRgba = true;
-        CompressedFormatString = "JPG";
-        ImageFormat = EImageFormat::JPEG;
-
-        break;
-
-    case EImageExtensions::EXT_PNG:
-
-        bUseRgba = true;
-        CompressedFormatString = "PNG";
-        ImageFormat = EImageFormat::PNG;
-
-        break;
-
-    default:
-
-        bUseRgba = true;
-        CompressedFormatString = "PNG";
-        ImageFormat = EImageFormat::PNG;
-
-        break;
-    }
-
-    TSharedPtr<IImageWrapper> ImageWrapper = ImageWrapperModule.CreateImageWrapper(ImageFormat);
-
-    if (!ImageWrapper.IsValid())
-    {
-        return false;
-    }
-
-    TArray<FColor> Array_Colors_RGBA;
-
-    if (bUseRgba)
-    {
-        const size_t Total = static_cast<size_t>(Size_X * Size_Y);
-
-        TArray<FColor> Array_Colors_BGRA;
-        Array_Colors_BGRA.SetNum(Total);
-        FMemory::Memcpy(Array_Colors_BGRA.GetData(), static_cast<FColor*>(Texture_Data), Lenght);
-
-        // Convert BGRA to RGBA
-        Array_Colors_RGBA = Array_Colors_BGRA;
-        for (int32 i = 0; i < Total; i++)
-        {
-            Array_Colors_RGBA[i].R = Array_Colors_BGRA[i].B;
-            Array_Colors_RGBA[i].B = Array_Colors_BGRA[i].R;
-        }
-    }
-
-    if (!ImageWrapper->SetRaw(bUseRgba ? Array_Colors_RGBA.GetData() : Texture_Data, Lenght, Size_X, Size_Y, bUseRgba ? ERGBFormat::RGBA : ERGBFormat::BGRA, 8))
-    {
-        Out_Code = CompressedFormatString + " compression is NOT successfull for target texture with old api. \"ImageWrapperModule->SetRaw\" failed.";
-        return false;
-    }
-
-    TArray64<uint8> CompressedData = ImageWrapper->GetCompressed(100);
-
-    if (CompressedData.IsEmpty())
-    {
-        Out_Code = CompressedFormatString + " compression is NOT successfull for target texture with old api. \"CompressedData\" is empty.";
-        return false;
-    }
-
-    Out_Code = CompressedFormatString + " compression is successfull for target texture with old api.";
-    Encoded_Data = CompressedData;
-    return true;
-}
-
-bool UExtendedVarsBPLibrary::Encode_Api_New(TArray<uint8>& Encoded_Data, FString& Out_Code, void* Texture_Data, EImageExtensions CompressFormat, int32 Size_X, int32 Size_Y, size_t Lenght, EGammaSpace GammaSpace)
-{
-    IImageWrapperModule& ImageWrapperModule = FModuleManager::LoadModuleChecked<IImageWrapperModule>(FName("ImageWrapper"));
-
-    FImageView ImageView;
-    ImageView.Format = ERawImageFormat::BGRA8;
-    ImageView.SizeX = Size_X;
-    ImageView.SizeY = Size_Y;
-    ImageView.GammaSpace = GammaSpace;
-    ImageView.NumSlices = 1;
-    ImageView.RawData = malloc(Lenght);
-    FMemory::Memcpy(ImageView.RawData, (uint8*)Texture_Data, Lenght);
-
-    EImageFormat Format = EImageFormat::PNG;
-    FString CompressedFormatString = "";
-
-    switch (CompressFormat)
-    {
-    case EImageExtensions::Ext_None:
-
-        Out_Code = "You have to define a proper extension for encoding like JPG/PNG/BMP.";
-        return false;
-
-    case EImageExtensions::Ext_BMP:
-
-        CompressedFormatString = "BMP";
-        Format = EImageFormat::BMP;
-        break;
-
-    case EImageExtensions::EXT_JPEG:
-
-        CompressedFormatString = "JPG";
-        Format = EImageFormat::JPEG;
-        break;
-
-    case EImageExtensions::EXT_PNG:
-
-        CompressedFormatString = "PNG";
-        Format = EImageFormat::PNG;
-        break;
-
-    default:
-
-        CompressedFormatString = "PNG";
-        Format = EImageFormat::PNG;
-        break;
-    }
-
-    TArray64<uint8> CompressedData;
-    if (!ImageWrapperModule.CompressImage(CompressedData, Format, ImageView, (int32)EImageCompressionQuality::Max))
-    {
-        Out_Code = CompressedFormatString + " compression is NOT successfull for target texture with new api. \"ImageWrapperModule.CompressImage\" failed.";
-        return false;
-    }
-
-    if (CompressedData.IsEmpty())
-    {
-        Out_Code = CompressedFormatString + " compression is NOT successfull for target texture with new api. \"CompressedData\" is empty.";
-        return false;
-    }
-
-    Out_Code = CompressedFormatString + " compression is successfull for target texture with new api.";
-    Encoded_Data = CompressedData;
-    return true;
-}
-
 EGammaSpaceBp UExtendedVarsBPLibrary::ConvertGammaSpaceBp(EGammaSpace InGammaSpace)
 {
     switch (InGammaSpace)
@@ -1469,54 +1330,67 @@ UTextureRenderTarget2D* UExtendedVarsBPLibrary::Widget_To_TRT2D(FString& OutCode
 
 void UExtendedVarsBPLibrary::TRT2D_To_T2D(FDelegateTexture2D Delegate_T2D, UTextureRenderTarget2D* In_TRT_2D)
 {
-    ENQUEUE_RENDER_COMMAND(Convert_TRT2D_To_T2D)([Delegate_T2D, In_TRT_2D](FRHICommandList& RHICmdList)
-        {
-            if (IsValid(In_TRT_2D) == false)
+    if (!IsValid(In_TRT_2D))
+    {
+        AsyncTask(ENamedThreads::GameThread, [Delegate_T2D]()
             {
-                AsyncTask(ENamedThreads::GameThread, [Delegate_T2D]()
-                    {
-                        Delegate_T2D.ExecuteIfBound(false, "In_TRT_2D is not valid.", nullptr);
-                    }
-                );
-
-                return;
+                Delegate_T2D.ExecuteIfBound(false, "In_TRT_2D is not valid.", nullptr);
             }
+        );
 
+        return;
+    }
+
+    TEnumAsByte<ETextureRenderTargetFormat> RT_Format = In_TRT_2D->RenderTargetFormat;
+
+    if (RT_Format != RTF_RGBA8 || RT_Format != RTF_RGBA8_SRGB)
+    {
+        if (!IsValid(In_TRT_2D))
+        {
+            AsyncTask(ENamedThreads::GameThread, [Delegate_T2D]()
+                {
+                    Delegate_T2D.ExecuteIfBound(false, "Render Target format is not correct. Please use RTF_RGBA8 or RTF_RGBA8_SRGB.", nullptr);
+                }
+            );
+
+            return;
+        }
+    }
+
+    ENQUEUE_RENDER_COMMAND(Convert_TRT2D_To_T2D)([Delegate_T2D, In_TRT_2D, RT_Format](FRHICommandListImmediate& RHICmdList)
+        {
             // Get Texture Render Target 2D Properties.
-            int32 Size_X = In_TRT_2D->SizeX;
-            int32 Size_Y = In_TRT_2D->SizeY;
-            int32 Size_Pixel = sizeof(FColor);
-            size_t Total = static_cast<size_t>(Size_X * Size_Y);
-            size_t Lenght = Total * Size_Pixel;
+            const int32 Size_X = In_TRT_2D->SizeX;
+            const int32 Size_Y = In_TRT_2D->SizeY;
+			const size_t Lenght = Size_X * Size_Y * sizeof(FColor);
 
             // Create Copy Descriptions.
             FRHITextureCreateDesc Desc =
                 FRHITextureCreateDesc::Create2D(TEXT("CopiedTextureDescription"))
                 .SetExtent(Size_X, Size_Y)
-                .SetFormat(EPixelFormat::PF_R8G8B8A8)
+                .SetFormat(PF_B8G8R8A8)
                 .SetInitialState(ERHIAccess::CopySrc);
 
             // Copy Texture Render Target 2D.
-            FRHITexture* CopiedTextureResource = RHICreateTexture(Desc);
+            FTextureRHIRef CopiedTextureResource = RHICreateTexture(Desc);
             FRHICopyTextureInfo CopyTextureInfo;
             RHICmdList.CopyTexture(In_TRT_2D->GetResource()->GetTextureRHI(), CopiedTextureResource, CopyTextureInfo);
 
-            // Get Texture Render Target 2D Buffer.
-            uint32 DestStride_TRT2D = 0;
-            void* Texture_Data_TRT2D = RHILockTexture2D(CopiedTextureResource, 0, RLM_ReadOnly, DestStride_TRT2D, false);
+            FRHILockTextureArgs LockArgs = FRHILockTextureArgs::Lock2D(CopiedTextureResource, 0, EResourceLockMode::RLM_ReadOnly, false, true);
+            FRHILockTextureResult LockResult = RHICmdList.LockTexture(LockArgs);
+			void* TextureData = LockResult.Data;
+            RHICmdList.UnlockTexture(LockArgs);
 
-            RHIUnlockTexture2D(CopiedTextureResource, 0, false, true);
-
-            AsyncTask(ENamedThreads::GameThread, [Delegate_T2D, Size_X, Size_Y, Lenght, Texture_Data_TRT2D]()
+            AsyncTask(ENamedThreads::GameThread, [Delegate_T2D, Size_X, Size_Y, Lenght, TextureData, RT_Format]()
                 {
                     // Create Texture
                     UTexture2D* Texture = UTexture2D::CreateTransient(Size_X, Size_Y, PF_B8G8R8A8);
                     Texture->NeverStream = true;
-                    Texture->SRGB = true;
+                    Texture->SRGB = RT_Format == RTF_RGBA8_SRGB ? true : false;
 
                     FTexture2DMipMap& Texture2D_Mip = Texture->GetPlatformData()->Mips[0];
                     void* Texture2D_Data = Texture2D_Mip.BulkData.Lock(LOCK_READ_WRITE);
-                    FMemory::Memcpy(Texture2D_Data, Texture_Data_TRT2D, Lenght);
+                    FMemory::Memcpy(Texture2D_Data, TextureData, Lenght);
                     Texture2D_Mip.BulkData.Unlock();
                     Texture->UpdateResource();
                     
@@ -1560,7 +1434,7 @@ bool UExtendedVarsBPLibrary::Export_ImageBuf_File(FString& Out_Path, TArray<uint
 
             TArray<FColor> Array_Colors;
             Array_Colors.SetNum(ImageRes.X * ImageRes.Y);
-            FMemory::Memcpy(Array_Colors.GetData(), ImageBuffer.GetData(), ImageBuffer.Num());
+            FMemory::Memcpy(Array_Colors.GetData(), reinterpret_cast<FColor*>(ImageBuffer.GetData()), ImageBuffer.Num());
 
             return FFileHelper::CreateBitmap(*Out_Path, ImageRes.X, ImageRes.Y, Array_Colors.GetData(), NULL, &IFileManager::Get(), NULL, true);
         }
@@ -1623,7 +1497,7 @@ bool UExtendedVarsBPLibrary::Export_T2D_Colors(TArray<FColor>& Out_Array, UTextu
 
     int32 Texture_Width = Texture->GetSizeX();
     int32 Texture_Height = Texture->GetSizeY();
-    size_t Lenght = static_cast<size_t>(Texture_Width * Texture_Height * 4);
+    size_t Lenght = static_cast<size_t>(Texture_Width * Texture_Height * sizeof(FColor));
 
     FTexture2DMipMap& Texture_Mip = Texture->GetPlatformData()->Mips[0];
     void* Texture_Data = Texture_Mip.BulkData.Lock(LOCK_READ_WRITE);
@@ -1694,9 +1568,9 @@ bool UExtendedVarsBPLibrary::Export_T2D_Bytes(TArray<uint8>& Out_Array, FString&
     return true;
 }
 
-void UExtendedVarsBPLibrary::Export_Texture_Bytes_RT(FDelegateImageBuffer DelegateImageBuffer, UTexture* TargetTexture, bool bUseOldApi, EImageExtensions Extension)
+void UExtendedVarsBPLibrary::Export_Texture_Bytes_RT(FDelegateImageBuffer DelegateImageBuffer, UTexture* TargetTexture)
 {    
-    ENQUEUE_RENDER_COMMAND(Cmd_Export_Texture)([TargetTexture, DelegateImageBuffer, Extension, bUseOldApi](FRHICommandList& RHICmdList)
+    ENQUEUE_RENDER_COMMAND(Cmd_Export_Texture)([TargetTexture, DelegateImageBuffer](FRHICommandListImmediate& RHICmdList)
         {
             if (!IsValid(TargetTexture))
             {
@@ -1711,6 +1585,7 @@ void UExtendedVarsBPLibrary::Export_Texture_Bytes_RT(FDelegateImageBuffer Delega
             
             // Initialize Variables.
             EPixelFormat PixelFormat = PF_Unknown;
+			bool bIsTexture2D = false;
 
             // Get Texture Resource and Pixel Format.
             if (UTexture2D* T2D = Cast<UTexture2D>(TargetTexture))
@@ -1738,6 +1613,7 @@ void UExtendedVarsBPLibrary::Export_Texture_Bytes_RT(FDelegateImageBuffer Delega
                 }
 
                 PixelFormat = PF_B8G8R8A8;
+                bIsTexture2D = true;
             }
 
             if (UTextureRenderTarget2D* TRT_2D = Cast<UTextureRenderTarget2D>(TargetTexture))
@@ -1753,12 +1629,14 @@ void UExtendedVarsBPLibrary::Export_Texture_Bytes_RT(FDelegateImageBuffer Delega
                     return;
                 }
 
-                PixelFormat = PF_R8G8B8A8;
+                PixelFormat = PF_B8G8R8A8;
+                bIsTexture2D = false;
             }
 
             if (UMediaTexture* MT_2D = Cast<UMediaTexture>(TargetTexture))
             {
                 PixelFormat = PF_R8G8B8A8;
+                bIsTexture2D = false;
             }
 
             // Get Image Properties.
@@ -1767,34 +1645,35 @@ void UExtendedVarsBPLibrary::Export_Texture_Bytes_RT(FDelegateImageBuffer Delega
             const EGammaSpaceBp GammaSpaceBp = UExtendedVarsBPLibrary::ConvertGammaSpaceBp(TargetGammaSpace);
             const int32 Size_X = TextureResource->GetSizeX();
             const int32 Size_Y = TextureResource->GetSizeY();
-            const size_t Lenght = static_cast<size_t>(Size_X * Size_Y * sizeof(FColor));
 
             // Create Copy Texture Descriptions
-            FRHITextureCreateDesc Desc =
-                FRHITextureCreateDesc::Create2D(TEXT("CopiedTextureDescription"))
+            FRHITextureCreateDesc Desc = FRHITextureCreateDesc::Create2D(TEXT("CopiedTextureDescription"))
                 .SetExtent(Size_X, Size_Y)
                 .SetFormat(PixelFormat)
                 .SetInitialState(ERHIAccess::CopySrc);
+            FTextureRHIRef CopiedTextureRHI = RHICreateTexture(Desc);
 
-            FRHITexture* CopiedTextureResource = RHICreateTexture(Desc);
+            FTextureRHIRef TargetTextureRHI = nullptr;
+
+            if (bIsTexture2D)
+            {
+				TargetTextureRHI = TextureResource->GetTexture2DRHI();
+            }
+
+            else
+            {
+				TargetTextureRHI = TextureResource->GetTextureRHI();
+            }
+
             FRHICopyTextureInfo CopyTextureInfo;
-            
-            // Copy Texture to Process.
-            if (PixelFormat == EPixelFormat::PF_B8G8R8A8)
-            {
-                RHICmdList.CopyTexture(TextureResource->GetTexture2DRHI(), CopiedTextureResource, CopyTextureInfo);
-            }
-            
-            else if (PixelFormat == EPixelFormat::PF_R8G8B8A8)
-            {
-                RHICmdList.CopyTexture(TextureResource->GetTextureRHI(), CopiedTextureResource, CopyTextureInfo);
-            }
+            RHICmdList.CopyTexture(TargetTextureRHI, CopiedTextureRHI, CopyTextureInfo);
 
-            uint32 DestStride = 0;
-            void* Texture_Data = RHILockTexture2D(CopiedTextureResource, 0, RLM_ReadOnly, DestStride, false);
-            RHIUnlockTexture2D(CopiedTextureResource, 0, false, true);
+            // We need tightly packed BGRA8 in FColor.
+            TArray<FColor> SurfaceColor;
+            FReadSurfaceDataFlags Flags(RCM_UNorm, CubeFace_MAX);
+            RHICmdList.ReadSurfaceData(CopiedTextureRHI, FIntRect(0, 0, Size_X, Size_Y), SurfaceColor, Flags);
 
-            if (!Texture_Data)
+            if (!SurfaceColor.GetData())
             {
                 AsyncTask(ENamedThreads::GameThread, [DelegateImageBuffer]()
                     {
@@ -1805,46 +1684,293 @@ void UExtendedVarsBPLibrary::Export_Texture_Bytes_RT(FDelegateImageBuffer Delega
                 return;
             }
 
-            // Initialize Compressed Image Buffer.
-            TArray<uint8> CompressedData;
+            AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [DelegateImageBuffer, SurfaceColor, Size_X, Size_Y, GammaSpaceBp]()
+                {
+                    TArray<uint8> BufferArray;
+                    const size_t BufferSize = SurfaceColor.Num() * sizeof(FColor);
+                    BufferArray.SetNum(BufferSize);
+                    FMemory::Memcpy(BufferArray.GetData(), (uint8*)SurfaceColor.GetData(), BufferSize);
+                    
+                    AsyncTask(ENamedThreads::GameThread, [DelegateImageBuffer, BufferArray, Size_X, Size_Y, GammaSpaceBp]()
+                        {
+                            DelegateImageBuffer.ExecuteIfBound(true, "Export texture as raw buffer is successful.", BufferArray, FVector2D(Size_X, Size_Y), GammaSpaceBp);
+                        }
+                    );
+                }
+            );
+        }
+    );
+}
 
-            if (Extension == EImageExtensions::Ext_None)
+void UExtendedVarsBPLibrary::Encode_Api_Old(FDelegateImageBuffer DelegateImageBuffer, FString& Out_Code, TArray<uint8> Texture_Data, FVector2D ImageRes, EImageExtensions CompressFormat)
+{    
+    ENQUEUE_RENDER_COMMAND(Cmd_Export_Texture)([DelegateImageBuffer, Texture_Data, ImageRes, CompressFormat](FRHICommandListImmediate& RHICmdList)
+        {
+            IImageWrapperModule& ImageWrapperModule = FModuleManager::LoadModuleChecked<IImageWrapperModule>(FName("ImageWrapper"));
+
+            bool bUseRgba = false;
+            FString FormatString = "";
+            EImageFormat ImageFormat = EImageFormat::Invalid;
+
+            switch (CompressFormat)
             {
-                CompressedData.SetNum(Lenght);
-                FMemory::Memcpy(CompressedData.GetData(), (uint8*)Texture_Data, Lenght); 
+                case EImageExtensions::Ext_None:
+                {
+                    AsyncTask(ENamedThreads::GameThread, [DelegateImageBuffer]()
+                        {
+                            DelegateImageBuffer.ExecuteIfBound(false, "You have to define a proper extension for encoding like JPG/PNG/BMP.", TArray<uint8>(), FVector2D(), EGammaSpaceBp::Invalid);
+                        }
+                    );
 
-                AsyncTask(ENamedThreads::GameThread, [DelegateImageBuffer, CompressedData, Size_X, Size_Y, GammaSpaceBp]()
+                    return;
+                }
+
+                case EImageExtensions::Ext_BMP:
+
+                    bUseRgba = false;
+                    FormatString = "BMP";
+                    ImageFormat = EImageFormat::BMP;
+
+                    break;
+
+                case EImageExtensions::EXT_JPEG:
+
+                    bUseRgba = true;
+                    FormatString = "JPG";
+                    ImageFormat = EImageFormat::JPEG;
+
+                    break;
+
+                case EImageExtensions::EXT_PNG:
+
+                    bUseRgba = true;
+                    FormatString = "PNG";
+                    ImageFormat = EImageFormat::PNG;
+
+                    break;
+
+                default:
+
+                    bUseRgba = true;
+                    FormatString = "PNG";
+                    ImageFormat = EImageFormat::PNG;
+
+                    break;
+            }
+
+            TSharedPtr<IImageWrapper> ImageWrapper = ImageWrapperModule.CreateImageWrapper(ImageFormat);
+
+            if (!ImageWrapper.IsValid())
+            {
+                AsyncTask(ENamedThreads::GameThread, [DelegateImageBuffer]()
                     {
-                        DelegateImageBuffer.ExecuteIfBound(true, "Export texture without extension (raw buffer) is successful.", CompressedData, FVector2D(Size_X, Size_Y), GammaSpaceBp);
+                        DelegateImageBuffer.ExecuteIfBound(false, "Function couldn't initialize ImageWrapper.", TArray<uint8>(), FVector2D(), EGammaSpaceBp::Invalid);
                     }
                 );
 
                 return;
             }
 
-            FString Out_Code = "";
-            bool EncodeResult = false;
+            TArray<FColor> Array_Colors_RGBA;
+			const size_t Lenght = Texture_Data.Num();
 
-            if (Extension == EImageExtensions::Ext_BMP || Extension == EImageExtensions::EXT_JPEG || Extension == EImageExtensions::EXT_PNG)
+            if (bUseRgba)
             {
-                if (bUseOldApi)
-                {
-                    EncodeResult = UExtendedVarsBPLibrary::Encode_Api_Old(CompressedData, Out_Code, Texture_Data, Extension, Size_X, Size_Y, Lenght);
-                }
+                const size_t Total = static_cast<size_t>(ImageRes.X * ImageRes.Y);
 
-                else
-                {
-                    EncodeResult = UExtendedVarsBPLibrary::Encode_Api_New(CompressedData, Out_Code, Texture_Data, Extension, Size_X, Size_Y, Lenght, TargetGammaSpace);
-                }
+                TArray<FColor> Array_Colors_BGRA;
+                Array_Colors_BGRA.SetNum(Total);
+                FMemory::Memcpy(Array_Colors_BGRA.GetData(), Texture_Data.GetData(), Lenght);
 
-                AsyncTask(ENamedThreads::GameThread, [DelegateImageBuffer, CompressedData, EncodeResult, Out_Code, Size_X, Size_Y, GammaSpaceBp]()
+                // Convert BGRA to RGBA
+                Array_Colors_RGBA = Array_Colors_BGRA;
+                for (int32 i = 0; i < Total; i++)
+                {
+                    Array_Colors_RGBA[i].R = Array_Colors_BGRA[i].B;
+                    Array_Colors_RGBA[i].B = Array_Colors_BGRA[i].R;
+                }
+            }
+
+			void* RawData = bUseRgba ? (void*)Array_Colors_RGBA.GetData() : (void*)Texture_Data.GetData();
+
+            if (!ImageWrapper->SetRaw(RawData, Lenght, ImageRes.X, ImageRes.Y, bUseRgba ? ERGBFormat::RGBA : ERGBFormat::BGRA, 8))
+            {
+                AsyncTask(ENamedThreads::GameThread, [DelegateImageBuffer, FormatString]()
                     {
-                        DelegateImageBuffer.ExecuteIfBound(EncodeResult, Out_Code, CompressedData, EncodeResult ? FVector2D(Size_X, Size_Y) : FVector2D(), GammaSpaceBp);
+                        DelegateImageBuffer.ExecuteIfBound(false, FormatString + " compression is NOT successfull for target texture with old api. \"ImageWrapperModule->SetRaw\" failed.", TArray<uint8>(), FVector2D(), EGammaSpaceBp::Invalid);
                     }
                 );
 
                 return;
             }
+			
+            TArray64<uint8> Compressed_64 = ImageWrapper->GetCompressed(100);
+			const size_t Compressed_64_Size = Compressed_64.Num();
+            
+            if (Compressed_64_Size <= 0)
+            {
+                AsyncTask(ENamedThreads::GameThread, [DelegateImageBuffer, FormatString]()
+                    {
+                        DelegateImageBuffer.ExecuteIfBound(false, "There is no compressed bytes.", TArray<uint8>(), FVector2D(), EGammaSpaceBp::Invalid);
+                    }
+                );
+
+                return;
+            }
+
+            if (Compressed_64_Size > TNumericLimits<int32>::Max())
+            {
+                AsyncTask(ENamedThreads::GameThread, [DelegateImageBuffer, FormatString]()
+                    {
+                        DelegateImageBuffer.ExecuteIfBound(false, "Image size exceeds TArray<uint> limits for this extension : " + FormatString, TArray<uint8>(), FVector2D(), EGammaSpaceBp::Invalid);
+                    }
+                );
+
+                return;
+            }
+
+            TArray<uint8> Compressed_86;
+			Compressed_86.SetNumUninitialized(static_cast<int32>(Compressed_64_Size));
+			FMemory::Memcpy(Compressed_86.GetData(), Compressed_64.GetData(), Compressed_64_Size);
+
+            if (!Compressed_86.GetData())
+            {
+                AsyncTask(ENamedThreads::GameThread, [DelegateImageBuffer, FormatString]()
+                    {
+                        DelegateImageBuffer.ExecuteIfBound(false, FormatString + " compression is NOT successfull for target texture with old api. \"CompressedData\" is empty.", TArray<uint8>(), FVector2D(), EGammaSpaceBp::Invalid);
+                    }
+                );
+
+                return;
+            }
+
+            AsyncTask(ENamedThreads::GameThread, [DelegateImageBuffer, Compressed_86, FormatString, ImageRes]()
+                {
+                    DelegateImageBuffer.ExecuteIfBound(true, FormatString + " compression is successfull for target texture with old api.", Compressed_86, ImageRes, EGammaSpaceBp::Invalid);
+                }
+            );
+        }
+    );
+}
+
+void UExtendedVarsBPLibrary::Encode_Api_New(FDelegateImageBuffer DelegateImageBuffer, FString& Out_Code, TArray<uint8> Texture_Data, FVector2D ImageRes, EImageExtensions CompressFormat, EGammaSpaceBp GammaSpaceBp)
+{
+    ENQUEUE_RENDER_COMMAND(Cmd_Export_Texture)([DelegateImageBuffer, Texture_Data, ImageRes, CompressFormat, GammaSpaceBp](FRHICommandListImmediate& RHICmdList)
+        {
+            IImageWrapperModule& ImageWrapperModule = FModuleManager::LoadModuleChecked<IImageWrapperModule>(FName("ImageWrapper"));
+
+            const size_t Lenght = Texture_Data.Num();
+
+            FImageView ImageView;
+            ImageView.Format = ERawImageFormat::BGRA8;
+            ImageView.SizeX = ImageRes.X;
+            ImageView.SizeY = ImageRes.Y;
+            ImageView.GammaSpace = UExtendedVarsBPLibrary::ConvertGammaSpace(GammaSpaceBp);
+            ImageView.NumSlices = 1;
+            ImageView.RawData = malloc(Lenght);
+            FMemory::Memcpy(ImageView.RawData, Texture_Data.GetData(), Lenght);
+
+            FString FormatString = "";
+            EImageFormat ImageFormat = EImageFormat::Invalid;
+
+            switch (CompressFormat)
+            {
+                case EImageExtensions::Ext_None:
+                {
+                    AsyncTask(ENamedThreads::GameThread, [DelegateImageBuffer]()
+                        {
+                            DelegateImageBuffer.ExecuteIfBound(false, "You have to define a proper extension for encoding like JPG/PNG/BMP.", TArray<uint8>(), FVector2D(), EGammaSpaceBp::Invalid);
+                        }
+                    );
+
+                    return;
+                }
+
+                case EImageExtensions::Ext_BMP:
+
+                    FormatString = "BMP";
+                    ImageFormat = EImageFormat::BMP;
+
+                    break;
+
+                case EImageExtensions::EXT_JPEG:
+
+                    FormatString = "JPG";
+                    ImageFormat = EImageFormat::JPEG;
+
+                    break;
+
+                case EImageExtensions::EXT_PNG:
+
+                    FormatString = "PNG";
+                    ImageFormat = EImageFormat::PNG;
+
+                    break;
+
+                default:
+
+                    FormatString = "PNG";
+                    ImageFormat = EImageFormat::PNG;
+
+                    break;
+            }
+
+            TArray64<uint8> Compressed_64;
+            if (!ImageWrapperModule.CompressImage(Compressed_64, ImageFormat, ImageView, (int32)EImageCompressionQuality::Max))
+            {
+                AsyncTask(ENamedThreads::GameThread, [DelegateImageBuffer, FormatString]()
+                    {
+                        DelegateImageBuffer.ExecuteIfBound(false, FormatString + " compression is NOT successfull for target texture with new api. \"ImageWrapperModule.CompressImage\" failed.", TArray<uint8>(), FVector2D(), EGammaSpaceBp::Invalid);
+                    }
+                );
+
+                return;
+            }
+
+            if (Compressed_64.IsEmpty())
+            {
+                AsyncTask(ENamedThreads::GameThread, [DelegateImageBuffer, FormatString]()
+                    {
+                        DelegateImageBuffer.ExecuteIfBound(false, FormatString + " compression is NOT successfull for target texture with new api. \"CompressedData\" is empty.", TArray<uint8>(), FVector2D(), EGammaSpaceBp::Invalid);
+                    }
+                );
+
+                return;
+            }
+
+            const size_t Compressed_64_Size = Compressed_64.Num();
+
+            if (Compressed_64_Size > TNumericLimits<int32>::Max())
+            {
+                AsyncTask(ENamedThreads::GameThread, [DelegateImageBuffer, FormatString]()
+                    {
+                        DelegateImageBuffer.ExecuteIfBound(false, "Image size exceeds TArray<uint> limits for this extension : " + FormatString, TArray<uint8>(), FVector2D(), EGammaSpaceBp::Invalid);
+                    }
+                );
+
+                return;
+            }
+
+            TArray<uint8> Compressed_86;
+            Compressed_86.SetNumUninitialized(static_cast<int32>(Compressed_64_Size));
+            FMemory::Memcpy(Compressed_86.GetData(), Compressed_64.GetData(), Compressed_64_Size);
+
+            if (!Compressed_86.GetData())
+            {
+                AsyncTask(ENamedThreads::GameThread, [DelegateImageBuffer, FormatString]()
+                    {
+                        DelegateImageBuffer.ExecuteIfBound(false, FormatString + " compression is NOT successfull for target texture with old api. \"CompressedData\" is empty.", TArray<uint8>(), FVector2D(), EGammaSpaceBp::Invalid);
+                    }
+                );
+
+                return;
+            }
+
+            AsyncTask(ENamedThreads::GameThread, [DelegateImageBuffer, Compressed_86, FormatString, ImageRes]()
+                {
+                    DelegateImageBuffer.ExecuteIfBound(true, FormatString + " compression is successfull for target texture with old api.", Compressed_86, ImageRes, EGammaSpaceBp::Invalid);
+                }
+            );
         }
     );
 }

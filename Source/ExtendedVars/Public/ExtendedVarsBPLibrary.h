@@ -72,10 +72,10 @@ public:
 	TArray64<uint8> ByteArray;
 
 	UFUNCTION(BlueprintPure)
-	virtual int64 GetSize()
-	{
-		return ByteArray.Num();
-	};
+	virtual int64 GetSize();
+
+	UFUNCTION(BlueprintCallable)
+	virtual TArray<uint8> GetBytes();
 };
 
 UCLASS(BlueprintType)
@@ -166,7 +166,7 @@ class UExtendedVarsBPLibrary : public UBlueprintFunctionLibrary
 
 #pragma region Write_Group
 
-	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Write File To Path", ToolTip = "You need to use absolute path.", Keywords = "write, path, bytes, export"), Category = "Frozen Forest|Extended Variables|Write")
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Write File To Path", ToolTip = "You need to use absolute path.\nBytes need to contain headers.", Keywords = "write, path, bytes, export"), Category = "Frozen Forest|Extended Variables|Write")
 	static EXTENDEDVARS_API bool Write_File_To_Path(TArray<uint8> In_Bytes, FString In_Path);
 
 #pragma endregion Write_Group
@@ -174,7 +174,7 @@ class UExtendedVarsBPLibrary : public UBlueprintFunctionLibrary
 #pragma region Bytes_Group
 
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Bytes To Bytes64 Object", ToolTip = "", Keywords = "bytes, object, x64"), Category = "Frozen Forest|Extended Variables|Bytes")
-	static EXTENDEDVARS_API bool Bytes_To_Object(UBytesObject_64*& Out_Bytes_Object, TArray<uint8> In_Bytes);
+	static EXTENDEDVARS_API bool Bytes_To_Bytes_x64(UBytesObject_64*& Out_Bytes_Object, TArray<uint8> In_Bytes);
 
 	UFUNCTION(BlueprintPure, meta = (DisplayName = "Bytes x64 To Hex", Keywords = "bytes, string, fstring, convert, to, hex"), Category = "Frozen Forest|Extended Variables|Bytes")
 	static EXTENDEDVARS_API FString Bytes_x64_To_Hex(UBytesObject_64* B64_Object, int32 Hex_Start, int32 Hex_End, bool bIsFull);
@@ -298,8 +298,6 @@ class UExtendedVarsBPLibrary : public UBlueprintFunctionLibrary
 
 #pragma region Render_Group
 
-	static EXTENDEDVARS_API bool Encode_Api_Old(TArray<uint8>& Encoded_Data, FString& Out_Code, void* Texture_Data, EImageExtensions CompressFormat, int32 Size_X, int32 Size_Y, size_t Lenght);
-	static EXTENDEDVARS_API bool Encode_Api_New(TArray<uint8>& Encoded_Data, FString& Out_Code, void* Texture_Data, EImageExtensions CompressFormat, int32 Size_X, int32 Size_Y, size_t Lenght, EGammaSpace GammaSpace);
 	static EXTENDEDVARS_API EGammaSpaceBp ConvertGammaSpaceBp(EGammaSpace InGammaSpace);
 	static EXTENDEDVARS_API EGammaSpace ConvertGammaSpace(EGammaSpaceBp InGammaSpaceBp);
 
@@ -319,7 +317,13 @@ class UExtendedVarsBPLibrary : public UBlueprintFunctionLibrary
 	static EXTENDEDVARS_API bool Export_T2D_Bytes(TArray<uint8>& Out_Array, FString& Out_Code, UTexture2D* Texture);
 
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Export Texture with Render Thread", ToolTip = "In extension is none, function won't use \"ImageWrapperModule\". So, API doesn't matter.", Keywords = "t2d, trt2d, texture, texture2d, utexture2d, render, target, media, get, export, byte, bytes, array, render, thread"), Category = "Frozen Forest|Extended Variables|Render")
-	static EXTENDEDVARS_API void Export_Texture_Bytes_RT(FDelegateImageBuffer DelegateImageBuffer, UTexture* TargetTexture, bool bUseOldApi, EImageExtensions Extension = EImageExtensions::Ext_None);
+	static EXTENDEDVARS_API void Export_Texture_Bytes_RT(FDelegateImageBuffer DelegateImageBuffer, UTexture* TargetTexture);
+
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Encodee Image (Old)", ToolTip = "", Keywords = "image, texture, render, decompress"), Category = "Frozen Forest|Extended Variables|Render")
+	static EXTENDEDVARS_API void Encode_Api_Old(FDelegateImageBuffer DelegateImageBuffer, FString& Out_Code, TArray<uint8> Texture_Data, FVector2D ImageRes, EImageExtensions CompressFormat);
+	
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Encode Image (New)", ToolTip = "", Keywords = "image, texture, render, decompress"), Category = "Frozen Forest|Extended Variables|Render")
+	static EXTENDEDVARS_API void Encode_Api_New(FDelegateImageBuffer DelegateImageBuffer, FString& Out_Code, TArray<uint8> Texture_Data, FVector2D ImageRes, EImageExtensions CompressFormat, EGammaSpaceBp GammaSpaceBp);
 
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Decompress Image", ToolTip = "", Keywords = "image, texture, render, decompress"), Category = "Frozen Forest|Extended Variables|Render")
 	static EXTENDEDVARS_API void DecompressImage(FDelegateImageBuffer DelegateImageBuffer, TArray<uint8> In_Bytes);
