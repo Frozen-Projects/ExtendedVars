@@ -32,12 +32,21 @@
 #include "Kismet/KismetRenderingLibrary.h"	    // Texture2D
 #include "MediaTexture.h"						// Media Texture
 
+#include "JsonObjectWrapper.h"
+#include "JsonUtilities.h"
+
 THIRD_PARTY_INCLUDES_START
 #include <cstdlib>
 #include <string>
 #include <sstream>
 #include <iostream>
 #include <chrono>
-//#include <iomanip>
-//#include <ctime>
+
+#ifdef _WIN64
+#define WIN32_LEAN_AND_MEAN
+#include "Windows/AllowWindowsPlatformTypes.h"
+#include <memoryapi.h>
+#include "Windows/HideWindowsPlatformTypes.h"
+#endif
+
 THIRD_PARTY_INCLUDES_END
