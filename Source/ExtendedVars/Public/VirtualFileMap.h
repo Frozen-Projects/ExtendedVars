@@ -22,7 +22,7 @@ public:
 };
 
 UCLASS()
-class EXTENDEDVARS_API UVirtualFileMap : public UGameInstanceSubsystem
+class EXTENDEDVARS_API UVirtualFileSubsystem : public UGameInstanceSubsystem
 {
 	GENERATED_BODY()
 	

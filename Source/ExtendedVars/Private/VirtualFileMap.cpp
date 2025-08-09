@@ -1,17 +1,17 @@
 #include "VirtualFileMap.h"
 
-void UVirtualFileMap::Initialize(FSubsystemCollectionBase& Collection)
+void UVirtualFileSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
 	Super::Initialize(Collection);
 }
 
-void UVirtualFileMap::Deinitialize()
+void UVirtualFileSubsystem::Deinitialize()
 {
 	this->CleanUpFileHandles();
 	Super::Deinitialize();
 }
 
-std::string UVirtualFileMap::GetErrorString(DWORD ErrorCode)
+std::string UVirtualFileSubsystem::GetErrorString(DWORD ErrorCode)
 {
 	char* msgBuffer = nullptr;
 	size_t size = FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM, nullptr, ErrorCode, 0, (LPSTR)&msgBuffer, 0, nullptr);
@@ -21,7 +21,7 @@ std::string UVirtualFileMap::GetErrorString(DWORD ErrorCode)
 	return message;
 }
 
-bool UVirtualFileMap::FileAddCallback(FString& Out_Code, FString FileName, TMap<FString, FString> Headers, const TArray<uint8>& FileData)
+bool UVirtualFileSubsystem::FileAddCallback(FString& Out_Code, FString FileName, TMap<FString, FString> Headers, const TArray<uint8>& FileData)
 {
 	FScopeLock Lock(&this->VFM_Guard);
 
@@ -89,7 +89,7 @@ bool UVirtualFileMap::FileAddCallback(FString& Out_Code, FString FileName, TMap<
 	return true;
 }
 
-void UVirtualFileMap::FileRemoveCallback(FString FileName)
+void UVirtualFileSubsystem::FileRemoveCallback(FString FileName)
 {
 	FScopeLock Lock(&this->VFM_Guard);
 
@@ -114,7 +114,7 @@ void UVirtualFileMap::FileRemoveCallback(FString FileName)
 	}
 }
 
-void UVirtualFileMap::CleanUpFileHandles()
+void UVirtualFileSubsystem::CleanUpFileHandles()
 {
 	FScopeLock Lock(&this->VFM_Guard);
 
@@ -141,7 +141,7 @@ void UVirtualFileMap::CleanUpFileHandles()
 	this->VirtualFileMaps.Empty();
 }
 
-bool UVirtualFileMap::AddFile(FString&Out_Code, FString FileName, TMap<FString, FString> Headers, const TArray<uint8>& FileData, bool bAllowUpdate)
+bool UVirtualFileSubsystem::AddFile(FString&Out_Code, FString FileName, TMap<FString, FString> Headers, const TArray<uint8>& FileData, bool bAllowUpdate)
 {
 	if (FileName.IsEmpty())
 	{
@@ -170,7 +170,7 @@ bool UVirtualFileMap::AddFile(FString&Out_Code, FString FileName, TMap<FString, 
 	return false;
 }
 
-bool UVirtualFileMap::RemoveFile(FString& Out_Code, FString FileName)
+bool UVirtualFileSubsystem::RemoveFile(FString& Out_Code, FString FileName)
 {
 	if (FileName.IsEmpty())
 	{
@@ -196,7 +196,7 @@ bool UVirtualFileMap::RemoveFile(FString& Out_Code, FString FileName)
 	return true;
 }
 
-bool UVirtualFileMap::GetFile(TArray<uint8>& Out_Buffer, FString& Out_Code, FString FileName)
+bool UVirtualFileSubsystem::GetFile(TArray<uint8>& Out_Buffer, FString& Out_Code, FString FileName)
 {
 	if (FileName.IsEmpty())
 	{
@@ -235,7 +235,7 @@ bool UVirtualFileMap::GetFile(TArray<uint8>& Out_Buffer, FString& Out_Code, FStr
 	return false;
 }
 
-bool UVirtualFileMap::GetFileHeader(TMap<FString, FString>& Out_Headers, FString& Out_Code, FString FileName)
+bool UVirtualFileSubsystem::GetFileHeader(TMap<FString, FString>& Out_Headers, FString& Out_Code, FString FileName)
 {
 	if (FileName.IsEmpty())
 	{
@@ -276,7 +276,7 @@ bool UVirtualFileMap::GetFileHeader(TMap<FString, FString>& Out_Headers, FString
 	return false;
 }
 
-bool UVirtualFileMap::GetFileNames(TArray<FString>& Out_Names, FString& Out_Code)
+bool UVirtualFileSubsystem::GetFileNames(TArray<FString>& Out_Names, FString& Out_Code)
 {
 	if (this->VirtualFileMaps.IsEmpty())
 	{
