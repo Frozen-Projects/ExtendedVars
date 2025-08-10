@@ -36,10 +36,8 @@
 #include "JsonUtilities.h"
 
 THIRD_PARTY_INCLUDES_START
-#include <cstdlib>
 #include <string>
 #include <sstream>
-#include <iostream>
 #include <chrono>
 
 #ifdef _WIN64
