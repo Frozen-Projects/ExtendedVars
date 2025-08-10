@@ -1,5 +1,7 @@
 #include "RuntimeLogger/RuntimeLogger.h"
 #include "RuntimeLogger/Logger_Thread.h"
+#include "Kismet/KismetSystemLibrary.h"
+#include "Misc/App.h"
 
 void URuntimeLoggerSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
@@ -8,12 +10,35 @@ void URuntimeLoggerSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 
 void URuntimeLoggerSubsystem::Deinitialize()
 {
-	delete this->LoggerThread;
+	this->CleanupLogs();
+	Super::Deinitialize();
+}
+
+void URuntimeLoggerSubsystem::OpenLogFile()
+{
+	const FString ProjectName = FApp::GetProjectName();
+	FString SaveDir = UKismetSystemLibrary::GetProjectSavedDirectory() + "/" + ProjectName + "_RuntimeLogger_" + FDateTime::Now().ToString() + ".log";
+	FPaths::MakePlatformFilename(SaveDir);
+
+	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
+	this->LogFileHandle.Reset(PlatformFile.OpenWrite(*SaveDir, true, true));
+}
+
+void URuntimeLoggerSubsystem::CleanupLogs()
+{
+	if (this->LoggerThread)
+	{
+		delete this->LoggerThread;
+	}
+
+	if (this->LogFileHandle.IsValid())
+	{
+		this->LogFileHandle->Flush();
+	}
+
 	this->LoggerThread = nullptr;
 	this->LogQueue.Empty();
 	this->LogDb.Empty();
-
-	Super::Deinitialize();
 }
 
 void URuntimeLoggerSubsystem::RecordMessages()
@@ -32,6 +57,13 @@ void URuntimeLoggerSubsystem::RecordMessages()
 		TempJson.JsonObjectToString(LogString);
 
 		this->LogDb.Add(UUID, LogString);
+
+		if (LogFileHandle.IsValid())
+		{
+			const FString LogLine = UUID + " = " + LogString + "\n";
+			FTCHARToUTF8 Utf8(*LogLine);
+			this->LogFileHandle->Write(reinterpret_cast<const uint8*>(Utf8.Get()), Utf8.Length());
+		}
 
 		AsyncTask(ENamedThreads::GameThread, [this, UUID, LogString]()
 			{
@@ -55,6 +87,9 @@ FString URuntimeLoggerSubsystem::LogMessage(TMap<FString, FString> Message)
 		const FString UUID = FGuid::NewGuid().ToString();
 		TempJson.JsonObject->SetStringField(TEXT("UUID"), UUID);
 
+		const FString LogTime = FDateTime::Now().ToString();
+		TempJson.JsonObject->SetStringField(TEXT("LogTime"), LogTime);
+
 		FString LogString;
 		TempJson.JsonObjectToString(LogString);
 		
@@ -72,6 +107,7 @@ FString URuntimeLoggerSubsystem::LogMessage(TMap<FString, FString> Message)
 
 void URuntimeLoggerSubsystem::StartLogging()
 {
+	this->OpenLogFile();
 	this->LoggerThread = new FRuntimeLogger_Thread(this);
 }
 

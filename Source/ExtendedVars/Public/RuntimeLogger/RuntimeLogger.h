@@ -24,8 +24,14 @@ class EXTENDEDVARS_API URuntimeLoggerSubsystem : public UGameInstanceSubsystem
 private:
 
 	FRuntimeLogger_Thread* LoggerThread = nullptr;
+	
 	TQueue<FString> LogQueue;
 	TMap<FString, FString> LogDb;
+
+	TUniquePtr<IFileHandle> LogFileHandle;
+
+	virtual void OpenLogFile();
+	virtual void CleanupLogs();
 
 public:
 
@@ -51,7 +57,10 @@ public:
 	UPROPERTY(BlueprintAssignable, Category = "FF_RealSense")
 	FDelegateRuntimeLogger Delegate_Runtime_Logger;
 
-	// This function is just a placeholder to demonstrate the use of __FUNCSIG__ Don't use it in production code.
+	/*
+	* This function is just a placeholder to demonstrate the use of __FUNCSIG__ Don't use it in production code.
+	* __FUNCSIG__ doesn't work on blueprints. So, you have to fill the function name manually.
+	*/
 	virtual void SampleFunction()
 	{
 		TMap<FString, FString> LogData;
