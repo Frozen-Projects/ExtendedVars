@@ -7,7 +7,6 @@
 // Custom Includes.
 #include "Extended_Bytes.h"	// It carrys Extended_Includes.h
 #include "Extended_Enums.h"
-#include "Extended_Saves.h"
 #include "Extended_Fonts.h"
 #include "Extended_Files.h"
 
@@ -226,37 +225,5 @@ class UExtendedVarsBPLibrary : public UBlueprintFunctionLibrary
 	static EXTENDEDVARS_API double GetPaintRatio(UCanvasRenderTarget2D* InCRT, FLinearColor InWantedColor, uint8 Tolerance = 1, bool bLogEachColor = false);
 
 #pragma endregion Render_Group
-
-#pragma region Logs
-
-	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Log String", Keywords = "log, display, string, result, return, code"), Category = "Frozen Forest|Extended Variables|Logs")
-	static EXTENDEDVARS_API void LogString(int32 InLogLevel, FString Log);
-
-#pragma endregion Logs
-
-#pragma region Saves
-
-	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Get Variable by Name", Keywords = "history, serialize, property, variable, name, get"), Category = "Frozen Forest|History|Save")
-	static EXTENDEDVARS_API bool GetVariableByName(FVariableContainer& Out_Container, UObject* In_Parent, FName In_Name);
-
-	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Get All Variables", Keywords = "history, serialize, property, variable, name, get, all"), Category = "Frozen Forest|History|Save")
-	static EXTENDEDVARS_API bool GetAllVariables(FVariablePool& Out_Containers, UObject* In_Parent, bool bIncludeEditor = false, bool bIncludeNative = false, bool bIncludeRoot = false);
-
-	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Set Variable", Keywords = "history, serialize, property, variable, name, set"), Category = "Frozen Forest|History|Save")
-	static EXTENDEDVARS_API bool SetVariable(UObject* TargetParent, FName TargetVariable, FString NewData);
-
-	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Save Game to File", Keywords = "history, serialize, property, variable, save, game, file"), Category = "Frozen Forest|History|Save")
-	static EXTENDEDVARS_API void SaveGameToFile(FDelegateSaveToFile DelegateSave, USaveGame* Instance_Save, FString In_Path);
-
-	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Save Game to Memory", Keywords = "history, serialize, property, variable, save, game, memory, buffer"), Category = "Frozen Forest|History|Save")
-	static EXTENDEDVARS_API void SaveGameToMemory(FDelegateSaveToMemory DelegateSave, USaveGame* Instance_Save);
-
-	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Load Game From File", Keywords = "history, serialize, property, variable, load, game, file"), Category = "Frozen Forest|History|Save")
-	static EXTENDEDVARS_API void LoadGameFromFile(FDelegateLoadSave DelegateLoad, FString In_Path, TSubclassOf<USaveGame> SaveGameClass);
-
-	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Load Game From Location", Keywords = "history, serialize, property, variable, load, game, file"), Category = "Frozen Forest|History|Save")
-	static EXTENDEDVARS_API void LoadGameFromMemory(FDelegateLoadSave DelegateLoad, TArray<uint8> In_Buffer, TSubclassOf<USaveGame> SaveGameClass);
-
-#pragma endregion Saves
 
 };
