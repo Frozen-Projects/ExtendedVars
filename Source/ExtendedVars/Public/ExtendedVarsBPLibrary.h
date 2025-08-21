@@ -82,9 +82,6 @@ class UExtendedVarsBPLibrary : public UBlueprintFunctionLibrary
 
 #pragma region Bytes_Group
 
-	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Bytes To Bytes64 Object", ToolTip = "", Keywords = "bytes, object, x64"), Category = "Frozen Forest|Extended Variables|Bytes")
-	static EXTENDEDVARS_API bool Bytes_To_Bytes_x64(UBytesObject_64*& Out_Bytes_Object, TArray<uint8> In_Bytes);
-
 	UFUNCTION(BlueprintPure, meta = (DisplayName = "Bytes x64 To Hex", Keywords = "bytes, string, fstring, convert, to, hex"), Category = "Frozen Forest|Extended Variables|Bytes")
 	static EXTENDEDVARS_API FString Bytes_x64_To_Hex(UBytesObject_64* B64_Object, int32 Hex_Start, int32 Hex_End, bool bIsFull);
 
@@ -181,8 +178,8 @@ class UExtendedVarsBPLibrary : public UBlueprintFunctionLibrary
 
 #pragma region Float_Group
 
-	UFUNCTION(BlueprintPure, meta = (DisplayName = "Float Precision", ToolTip = "", Keywords = "float, get, precision"), Category = "Frozen Forest|Extended Variables|Float")
-	static EXTENDEDVARS_API float Float_Precision(float TargetFloat, int32 Precision);
+	UFUNCTION(BlueprintPure, meta = (DisplayName = "Float Precision", ToolTip = "It will trim your float/double. For example: 3.993423 to 3.99", Keywords = "float, get, precision"), Category = "Frozen Forest|Extended Variables|Float")
+	static EXTENDEDVARS_API double Float_Precision(double TargetFloat, int32 Precision);
 	
 	UFUNCTION(BlueprintPure, meta = (DisplayName = "Get Fraction Count", ToolTip = "", Keywords = "float, get, fraction, count"), Category = "Frozen Forest|Extended Variables|Float")
 	static EXTENDEDVARS_API int32 Float_Fraction_Count(float TargetFloat);
@@ -193,9 +190,6 @@ class UExtendedVarsBPLibrary : public UBlueprintFunctionLibrary
 #pragma endregion Float_Group
 	
 #pragma region Time_Group
-
-	UFUNCTION(BlueprintPure, meta = (DisplayName = "Time Counter To FDateTime", ToolTip = "", Keywords = "string, fstring, parse, date, time, convert, to"), Category = "Frozen Forest|Extended Variables|Time")
-	static EXTENDEDVARS_API bool Time_Counter_To_FDateTime(FDateTime& Out_Time, FString In_Time, FString Delimiter, EStringToDate ConvertType);
 
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Increment Date", ToolTip = "If there is no \"Start\" input, function will increment \"Now\".", Keywords = "date, time, increment, auto, calculate"), Category = "FF_MBedTLS")
 	static EXTENDEDVARS_API FDateTime Increment_Date(FDateTime Start, int32 In_Years, int32 In_Months, int32 In_Days);

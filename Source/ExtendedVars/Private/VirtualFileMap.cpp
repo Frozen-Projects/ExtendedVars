@@ -11,6 +11,7 @@ void UVirtualFileSubsystem::Deinitialize()
 	Super::Deinitialize();
 }
 
+#ifdef _WIN64
 std::string UVirtualFileSubsystem::GetErrorString(DWORD ErrorCode)
 {
 	char* msgBuffer = nullptr;
@@ -20,9 +21,12 @@ std::string UVirtualFileSubsystem::GetErrorString(DWORD ErrorCode)
 	LocalFree(msgBuffer);
 	return message;
 }
+#endif // _WIN64
 
 bool UVirtualFileSubsystem::FileAddCallback(FString& Out_Code, FString FileName, TMap<FString, FString> Headers, const TArray<uint8>& FileData)
 {
+#ifdef _WIN64
+
 	FScopeLock Lock(&this->VFM_Guard);
 
 	const wchar_t* FileNameChar = *FileName;
@@ -87,10 +91,17 @@ bool UVirtualFileSubsystem::FileAddCallback(FString& Out_Code, FString FileName,
 
 	Out_Code = TEXT("File added successfully.");
 	return true;
+
+#else
+
+	return false;
+
+#endif // _WIN64
 }
 
 void UVirtualFileSubsystem::FileRemoveCallback(FString FileName)
 {
+#ifdef _WIN64
 	FScopeLock Lock(&this->VFM_Guard);
 
 	if (FFileMapHandles* FileHandle = this->VirtualFileMaps.Find(FileName))
@@ -112,10 +123,14 @@ void UVirtualFileSubsystem::FileRemoveCallback(FString FileName)
 
 		this->VirtualFileMaps.Remove(FileName);
 	}
+#else
+	return;
+#endif // _WIN64
 }
 
 void UVirtualFileSubsystem::CleanUpFileHandles()
 {
+#ifdef _WIN64
 	FScopeLock Lock(&this->VFM_Guard);
 
 	for (TPair<FString, FFileMapHandles>& Pair : this->VirtualFileMaps)
@@ -139,10 +154,14 @@ void UVirtualFileSubsystem::CleanUpFileHandles()
 	}
 
 	this->VirtualFileMaps.Empty();
+#else
+	return;
+#endif // _WIN64
 }
 
 bool UVirtualFileSubsystem::AddFile(FString&Out_Code, FString FileName, TMap<FString, FString> Headers, const TArray<uint8>& FileData, bool bAllowUpdate)
 {
+#ifdef _WIN64
 	if (FileName.IsEmpty())
 	{
 		Out_Code = TEXT("FileName is empty");
@@ -168,10 +187,14 @@ bool UVirtualFileSubsystem::AddFile(FString&Out_Code, FString FileName, TMap<FSt
 
 	Out_Code = "File already exists and update is not allowed.";
 	return false;
+#else
+	return false;
+#endif // _WIN64
 }
 
 bool UVirtualFileSubsystem::RemoveFile(FString& Out_Code, FString FileName)
 {
+#ifdef _WIN64
 	if (FileName.IsEmpty())
 	{
 		Out_Code = TEXT("FileName is empty");
@@ -194,10 +217,14 @@ bool UVirtualFileSubsystem::RemoveFile(FString& Out_Code, FString FileName)
 
 	Out_Code = TEXT("File removed successfully.");
 	return true;
+#else
+	return false;
+#endif // _WIN64
 }
 
 bool UVirtualFileSubsystem::GetFile(TArray<uint8>& Out_Buffer, FString& Out_Code, FString FileName)
 {
+#ifdef _WIN64
 	if (FileName.IsEmpty())
 	{
 		Out_Code = TEXT("FileName is empty");
@@ -233,10 +260,14 @@ bool UVirtualFileSubsystem::GetFile(TArray<uint8>& Out_Buffer, FString& Out_Code
 
 	Out_Code = TEXT("File is not mapped or has no data.");
 	return false;
+#else
+	return false;
+#endif // _WIN64
 }
 
 bool UVirtualFileSubsystem::GetFileHeader(TMap<FString, FString>& Out_Headers, FString& Out_Code, FString FileName)
 {
+#ifdef _WIN64
 	if (FileName.IsEmpty())
 	{
 		Out_Code = TEXT("FileName is empty");
@@ -274,10 +305,14 @@ bool UVirtualFileSubsystem::GetFileHeader(TMap<FString, FString>& Out_Headers, F
 	}
 
 	return false;
+#else
+	return false;
+#endif // _WIN64
 }
 
 bool UVirtualFileSubsystem::GetFileNames(TArray<FString>& Out_Names, FString& Out_Code)
 {
+#ifdef _WIN64
 	if (this->VirtualFileMaps.IsEmpty())
 	{
 		return false;
@@ -290,4 +325,7 @@ bool UVirtualFileSubsystem::GetFileNames(TArray<FString>& Out_Names, FString& Ou
 	Out_Names = TempNames;
 
 	return true;
+#else
+	return false;
+#endif // _WIN64
 }

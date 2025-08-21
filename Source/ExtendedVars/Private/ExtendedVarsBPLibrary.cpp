@@ -494,25 +494,6 @@ bool UExtendedVarsBPLibrary::Write_File_To_Path(FString& Out_Code, TArray<uint8>
 
 #pragma region Bytes_Group
 
-bool UExtendedVarsBPLibrary::Bytes_To_Bytes_x64(UBytesObject_64*& Out_Bytes_Object, TArray<uint8> In_Bytes)
-{
-    if (In_Bytes.Num() == 0)
-    {
-        return false;
-    }
-
-    TArray64<uint8> ByteArray;
-    ByteArray.SetNum(In_Bytes.Num(), EAllowShrinking::Yes);
-    FMemory::Memcpy(ByteArray.GetData(), In_Bytes.GetData(), In_Bytes.GetAllocatedSize());
-
-    UBytesObject_64* BytesObject_64 = NewObject<UBytesObject_64>();
-    BytesObject_64->ByteArray = ByteArray;
-
-    Out_Bytes_Object = BytesObject_64;
-
-    return true;
-}
-
 FString UExtendedVarsBPLibrary::Bytes_x64_To_Hex(UBytesObject_64* B64_Object, int32 Hex_Start, int32 Hex_End, bool bIsFull)
 {
     if (B64_Object->ByteArray.Num() == 0)
@@ -1056,7 +1037,7 @@ int32 UExtendedVarsBPLibrary::Int32_Truncate_To_Small(int32 TargetInteger)
 
 #pragma region Float_Group
 
-float UExtendedVarsBPLibrary::Float_Precision(float TargetFloat, int32 Precision)
+double UExtendedVarsBPLibrary::Float_Precision(double TargetFloat, int32 Precision)
 {
     int32 PrecisionFixer = pow(10, Precision);
     return floor(PrecisionFixer * TargetFloat) / PrecisionFixer;
@@ -1088,53 +1069,6 @@ float UExtendedVarsBPLibrary::Float_Round_Next(float TargetFloat, double Decimal
 #pragma endregion Float_Group
 
 #pragma region Time_Group
-
-bool UExtendedVarsBPLibrary::Time_Counter_To_FDateTime(FDateTime& Out_Time, FString In_Time, FString Delimiter, EStringToDate ConvertType)
-{
-    if (In_Time.IsEmpty())
-    {
-        return false;
-    }
-
-    TArray<FString> TimeSections;
-
-    switch (ConvertType)
-    {
-    case EStringToDate::None:
-
-        return false;
-
-    case EStringToDate::UnrealDateTime:
-
-        return FDateTime::Parse(In_Time, Out_Time);
-
-    case EStringToDate::Http:
-
-        return FDateTime::ParseHttpDate(In_Time, Out_Time);
-
-    case EStringToDate::Iso8601:
-
-        return FDateTime::ParseIso8601(*In_Time, Out_Time);
-
-    case EStringToDate::Custom:
-
-        TimeSections = UKismetStringLibrary::ParseIntoArray(In_Time, Delimiter, false);
-
-        if (TimeSections.Num() == 3)
-        {
-            Out_Time = FDateTime(1, 1, 1, FCString::Atoi(*TimeSections[0]), FCString::Atoi(*TimeSections[1]), FCString::Atoi(*TimeSections[2]), 0);
-            return true;
-        }
-        
-        else
-        {
-            return false;
-        }
-
-    default:
-        return false;
-    }
-}
 
 FDateTime UExtendedVarsBPLibrary::Increment_Date(FDateTime Start, int32 In_Years, int32 In_Months, int32 In_Days)
 {
