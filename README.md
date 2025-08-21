@@ -83,7 +83,7 @@ Plugin's itself doesn't have platform restriction but some functions are unique 
 - DecompressImage : Get raw buffer from encoded image.
 - Import_T2D_Bytes  
 - Import_T2D_Bytes_LowLevel  
-- GetPaintRatio : Think you have a UCanvasRenderTarget2D to paint some shapes on realtime. You want to get painted area ratio to all.
+- GetPaintRatio : Think you have a ``UCanvasRenderTarget2D`` to paint some shapes on realtime. You want to get painted area ratio to all.
 
 ## Logs
 - LogString  
