@@ -2066,6 +2066,78 @@ bool UExtendedVarsBPLibrary::Import_T2D_Bytes_LowLevel(UTexture2D*& Out_Texture,
     return true;
 }
 
+double UExtendedVarsBPLibrary::GetPaintRatio(UCanvasRenderTarget2D* InCRT, FLinearColor InWantedColor, uint8 Tolerance, bool bLogEachColor)
+{
+    if (!IsValid(InCRT))
+    {
+        return (double)-1;
+    }
+
+	UWorld* CurrentWorld = GEngine->GetCurrentPlayWorld();
+
+    if (!IsValid(CurrentWorld))
+    {
+        return (double)-1;
+    }
+
+    TArray<FColor> Array_Colors;
+    UKismetRenderingLibrary::ReadRenderTarget(CurrentWorld, InCRT, Array_Colors, false);
+    const size_t TotalColors = Array_Colors.Num();
+
+    if (TotalColors == 0)
+    {
+        return (double)-1;
+    }
+
+	// Each thread will process this many colors. (This value equals to 256x256 pixels)
+    const size_t BlockSize = 65536;
+
+	// Calculate the number of blocks we need to process all colors.
+    const size_t NumBlocks = (TotalColors + BlockSize - 1) / BlockSize;
+    std::atomic<int64> GlobalCount = { 0 };
+
+    const FColor TargetColor = InWantedColor.ToFColor(false);
+
+    ParallelFor(NumBlocks, [&](int32 BlockIdx)
+        {
+            const int32 Start = BlockIdx * BlockSize;
+            const int32 End = FMath::Min(Start + BlockSize, TotalColors);
+
+            int64 LocalCount = 0;
+            // Tight loop over our slice; compare exact FColor equality.
+            for (int32 Index = Start; Index < End; ++Index)
+            {
+				const FColor& Each_Color = Array_Colors[Index];
+
+                if (bLogEachColor)
+                {
+                    UE_LOG(LogTemp, Warning, TEXT("Color : %s"), *Each_Color.ToString());
+                }
+
+                const uint8_t R = Each_Color.R;
+				const uint8_t G = Each_Color.G;
+				const uint8_t B = Each_Color.B;
+
+				bool bDoesMatch = FMath::IsNearlyEqual(R, TargetColor.R, (double)Tolerance) && FMath::IsNearlyEqual(G, TargetColor.G, (double)Tolerance) && FMath::IsNearlyEqual(B, TargetColor.B, (double)Tolerance);
+
+                if (bDoesMatch)
+                {
+                    ++LocalCount;
+                }
+            }
+
+            // Single atomic add per block keeps contention tiny.
+            if (LocalCount)
+            {
+                GlobalCount.fetch_add(LocalCount, std::memory_order_relaxed);
+            }
+        }
+    );
+
+    const double Ratio = (double)GlobalCount / (double)TotalColors;
+	return Ratio;
+}
+
 #pragma endregion Render_Group
 
 #pragma region Logs

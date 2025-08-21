@@ -334,6 +334,13 @@ class UExtendedVarsBPLibrary : public UBlueprintFunctionLibrary
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Import Texture2D From Bytes (Game Thread - Low Level)", Keywords = "t2d, texture, texture2d, utexture2d, import, create, bytes, low, level"), Category = "Frozen Forest|Extended Variables|Render")
 	static EXTENDEDVARS_API bool Import_T2D_Bytes_LowLevel(UTexture2D*& Out_Texture, TArray<uint8> In_Bytes, FVector2D Size, bool bUseSrgb);
 
+	/*
+	* @param Tolerance It is a tolerance for color comparison. Default is 1. Max is 255. Because there can be slight differences in colors while reading them. Human eye can't see differences in colors with tolerance 1.
+	* @param bLogEachColor It print each color to log. Only for debug purposes ! It will slow down the process.
+	*/
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Get Paint Ratio", Keywords = "PaintRatio sample test testing"), Category = "Frozen Forest|Extended Variables|Render")
+	static EXTENDEDVARS_API double GetPaintRatio(UCanvasRenderTarget2D* InCRT, FLinearColor InWantedColor, uint8 Tolerance = 1, bool bLogEachColor = false);
+
 #pragma endregion Render_Group
 
 #pragma region Logs
