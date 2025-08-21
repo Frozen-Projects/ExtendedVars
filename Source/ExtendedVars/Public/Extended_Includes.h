@@ -1,11 +1,5 @@
 #pragma once
 
-// Custom Includes.
-#include "Extended_Enums.h"
-
-// UE Font Includes.
-#include "Engine/FontFace.h"
-
 // UE Math Includes.
 #include "Algo/Reverse.h"                       // Reverse array
 #include "Kismet/KismetMathLibrary.h"
@@ -34,17 +28,3 @@
 
 #include "JsonObjectWrapper.h"
 #include "JsonUtilities.h"
-
-THIRD_PARTY_INCLUDES_START
-#include <string>
-#include <sstream>
-#include <chrono>
-
-#ifdef _WIN64
-#define WIN32_LEAN_AND_MEAN
-#include "Windows/AllowWindowsPlatformTypes.h"
-#include <memoryapi.h>
-#include "Windows/HideWindowsPlatformTypes.h"
-#endif
-
-THIRD_PARTY_INCLUDES_END

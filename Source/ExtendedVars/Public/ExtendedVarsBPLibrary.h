@@ -6,104 +6,13 @@
 
 // Custom Includes.
 #include "Extended_Includes.h"
+#include "Extended_Enums.h"
+#include "Extended_Saves.h"
+#include "Extended_Fonts.h"
+#include "Extended_Files.h"
+#include "Extended_Bytes.h"
 
 #include "ExtendedVarsBPLibrary.generated.h"
-
-class FFindDirectories : public IPlatformFile::FDirectoryVisitor
-{
-public:
-
-	TArray<FFolderContents> Array_Contents;
-
-	FFindDirectories();
-	virtual bool Visit(const TCHAR* CharPath, bool bIsDirectory) override;
-};
-
-// Select folder from dialog (each content).
-USTRUCT(BlueprintType)
-struct EXTENDEDVARS_API FFolderContents
-{
-	GENERATED_BODY()
-
-public:
-
-	UPROPERTY(BlueprintReadOnly)
-	FString Path = "";
-
-	UPROPERTY(BlueprintReadOnly)
-	FString Name = "";
-
-	UPROPERTY(BlueprintReadOnly)
-	bool bIsFile = false;
-
-	bool operator == (const FFolderContents& Other) const
-	{
-		return Path == Other.Path && Name == Other.Name && bIsFile == Other.bIsFile;
-	}
-
-	bool operator != (const FFolderContents& Other) const
-	{
-		return !(*this == Other);
-	}
-};
-
-FORCEINLINE uint32 GetTypeHash(const FFolderContents& Key)
-{
-	uint32 Hash_Path = GetTypeHash(Key.Path);
-	uint32 Hash_Name = GetTypeHash(Key.Name);
-	uint32 Hash_bIsFile = GetTypeHash(Key.bIsFile);
-
-	uint32 GenericHash;
-	FMemory::Memset(&GenericHash, 0, sizeof(uint32));
-	GenericHash = HashCombine(GenericHash, Hash_Path);
-	GenericHash = HashCombine(GenericHash, Hash_Name);
-	GenericHash = HashCombine(GenericHash, Hash_bIsFile);
-
-	return GenericHash;
-}
-
-UCLASS(BlueprintType)
-class EXTENDEDVARS_API UBytesObject_64 : public UObject
-{
-	GENERATED_BODY()
-
-public:
-
-	TArray64<uint8> ByteArray;
-
-	UFUNCTION(BlueprintPure)
-	virtual int64 GetSize();
-
-	UFUNCTION(BlueprintCallable)
-	virtual TArray<uint8> GetBytes();
-};
-
-UCLASS(BlueprintType)
-class EXTENDEDVARS_API URuntimeFont : public UObject
-{
-	GENERATED_BODY()
-
-public:
-
-	// ~URuntimeFont start.
-	void BeginDestroy();
-	// ~URuntimeFont finish.
-
-	UPROPERTY(BlueprintReadOnly)
-	FString FontName;
-
-	UPROPERTY(BlueprintReadOnly)
-	UFont* Font;
-
-	UFontFace* Font_Face;
-
-};
-
-UDELEGATE(BlueprintAuthorityOnly)
-DECLARE_DYNAMIC_DELEGATE_ThreeParams(FDelegateFolderContents, bool, bIsSuccessfull, FString, ErrorCode, const TArray<FFolderContents>&, Out_Contents);
-
-UDELEGATE(BlueprintAuthorityOnly)
-DECLARE_DYNAMIC_DELEGATE_ThreeParams(FDelegateBytes_32, bool, bIsSuccessfull, FString, ErrorCode, const TArray<uint8>&, Out_Bytes);
 
 UDELEGATE(BlueprintAuthorityOnly)
 DECLARE_DYNAMIC_DELEGATE_FiveParams(FDelegateImageBuffer, bool, bIsSuccessfull, FString, ErrorCode, const TArray<uint8>&, Out_Bytes, FVector2D, Out_Size, EGammaSpaceBp, OutGammaSpaceBp);
@@ -349,5 +258,30 @@ class UExtendedVarsBPLibrary : public UBlueprintFunctionLibrary
 	static EXTENDEDVARS_API void LogString(int32 InLogLevel, FString Log);
 
 #pragma endregion Logs
+
+#pragma region Saves
+
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Get Variable by Name", Keywords = "history, serialize, property, variable, name, get"), Category = "Frozen Forest|History|Save")
+	static EXTENDEDVARS_API bool GetVariableByName(FVariableContainer& Out_Container, UObject* In_Parent, FName In_Name);
+
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Get All Variables", Keywords = "history, serialize, property, variable, name, get, all"), Category = "Frozen Forest|History|Save")
+	static EXTENDEDVARS_API bool GetAllVariables(FVariablePool& Out_Containers, UObject* In_Parent, bool bIncludeEditor = false, bool bIncludeNative = false, bool bIncludeRoot = false);
+
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Set Variable", Keywords = "history, serialize, property, variable, name, set"), Category = "Frozen Forest|History|Save")
+	static EXTENDEDVARS_API bool SetVariable(UObject* TargetParent, FName TargetVariable, FString NewData);
+
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Save Game to File", Keywords = "history, serialize, property, variable, save, game, file"), Category = "Frozen Forest|History|Save")
+	static EXTENDEDVARS_API void SaveGameToFile(FDelegateSaveToFile DelegateSave, USaveGame* Instance_Save, FString In_Path);
+
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Save Game to Memory", Keywords = "history, serialize, property, variable, save, game, memory, buffer"), Category = "Frozen Forest|History|Save")
+	static EXTENDEDVARS_API void SaveGameToMemory(FDelegateSaveToMemory DelegateSave, USaveGame* Instance_Save);
+
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Load Game From File", Keywords = "history, serialize, property, variable, load, game, file"), Category = "Frozen Forest|History|Save")
+	static EXTENDEDVARS_API void LoadGameFromFile(FDelegateLoadSave DelegateLoad, FString In_Path, TSubclassOf<USaveGame> SaveGameClass);
+
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Load Game From Location", Keywords = "history, serialize, property, variable, load, game, file"), Category = "Frozen Forest|History|Save")
+	static EXTENDEDVARS_API void LoadGameFromMemory(FDelegateLoadSave DelegateLoad, TArray<uint8> In_Buffer, TSubclassOf<USaveGame> SaveGameClass);
+
+#pragma endregion Saves
 
 };
