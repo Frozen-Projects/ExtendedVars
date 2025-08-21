@@ -5,12 +5,11 @@
 #include "Kismet/BlueprintFunctionLibrary.h"
 
 // Custom Includes.
-#include "Extended_Includes.h"
+#include "Extended_Bytes.h"	// It carrys Extended_Includes.h
 #include "Extended_Enums.h"
 #include "Extended_Saves.h"
 #include "Extended_Fonts.h"
 #include "Extended_Files.h"
-#include "Extended_Bytes.h"
 
 #include "ExtendedVarsBPLibrary.generated.h"
 
@@ -82,15 +81,6 @@ class UExtendedVarsBPLibrary : public UBlueprintFunctionLibrary
 
 #pragma region Bytes_Group
 
-	UFUNCTION(BlueprintPure, meta = (DisplayName = "Bytes x64 To Hex", Keywords = "bytes, string, fstring, convert, to, hex"), Category = "Frozen Forest|Extended Variables|Bytes")
-	static EXTENDEDVARS_API FString Bytes_x64_To_Hex(UBytesObject_64* B64_Object, int32 Hex_Start, int32 Hex_End, bool bIsFull);
-
-	UFUNCTION(BlueprintPure, meta = (DisplayName = "Bytes x64 To Base64", Keywords = "bytes, string, fstring, convert, to, base64"), Category = "Frozen Forest|Extended Variables|Bytes")
-	static EXTENDEDVARS_API FString Bytes_x64_To_Base64(UBytesObject_64* B64_Object, bool bUseUrl);
-
-	UFUNCTION(BlueprintPure, meta = (DisplayName = "Bytes x64 To UTF8", Keywords = "bytes, string, fstring, convert, to, utf8"), Category = "Frozen Forest|Extended Variables|Bytes")
-	static EXTENDEDVARS_API FString Bytes_x64_To_UTF8(UBytesObject_64* B64_Object);
-
 	UFUNCTION(BlueprintPure, meta = (DisplayName = "Bytes x86 To Hex", Keywords = "bytes, string, fstring, convert, to, hex"), Category = "Frozen Forest|Extended Variables|Bytes")
 	static EXTENDEDVARS_API FString Bytes_x86_To_Hex(TArray<uint8> In_Bytes, int32 Hex_Start, int32 Hex_End, bool bIsFull);
 
@@ -99,15 +89,6 @@ class UExtendedVarsBPLibrary : public UBlueprintFunctionLibrary
 
 	UFUNCTION(BlueprintPure, meta = (DisplayName = "Bytes x86 To UTF8", Keywords = "bytes, string, fstring, convert, to, utf8"), Category = "Frozen Forest|Extended Variables|Bytes")
 	static EXTENDEDVARS_API FString Bytes_x86_To_UTF8(TArray<uint8> In_Bytes);
-
-	UFUNCTION(BlueprintPure, meta = (DisplayName = "Hex To Bytes x64", Keywords = "bytes, string, fstring, convert, to, hex"), Category = "Frozen Forest|Extended Variables|Bytes")
-	static EXTENDEDVARS_API UBytesObject_64* Hex_To_Bytes_x64(FString In_Hex);
-
-	UFUNCTION(BlueprintPure, meta = (DisplayName = "UTF8 To Bytes x64", Keywords = "bytes, string, fstring, convert, to, utf8"), Category = "Frozen Forest|Extended Variables|Bytes")
-	static EXTENDEDVARS_API UBytesObject_64* UTF8_To_Bytes_x64(FString In_UTF8);
-
-	UFUNCTION(BlueprintPure, meta = (DisplayName = "Base64 To Bytes x64", Keywords = "bytes, string, fstring, convert, to, base64"), Category = "Frozen Forest|Extended Variables|Bytes")
-	static EXTENDEDVARS_API UBytesObject_64* Base64_To_Bytes_x64(FString In_Base64, bool bUseUrl);
 
 	UFUNCTION(BlueprintPure, meta = (DisplayName = "Hex To Bytes x86", Keywords = "bytes, string, fstring, convert, to, hex"), Category = "Frozen Forest|Extended Variables|Bytes")
 	static EXTENDEDVARS_API TArray<uint8> Hex_To_Bytes_x86(FString In_Hex);

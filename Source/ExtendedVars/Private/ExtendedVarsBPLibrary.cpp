@@ -1,14 +1,6 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "ExtendedVarsBPLibrary.h"
-
-THIRD_PARTY_INCLUDES_START
-#include <string>
-#include <sstream>
-#include <chrono>
-
-THIRD_PARTY_INCLUDES_END
-
 #include "ExtendedVars.h"
 
 UExtendedVarsBPLibrary::UExtendedVarsBPLibrary(const FObjectInitializer& ObjectInitializer)
@@ -494,78 +486,6 @@ bool UExtendedVarsBPLibrary::Write_File_To_Path(FString& Out_Code, TArray<uint8>
 
 #pragma region Bytes_Group
 
-FString UExtendedVarsBPLibrary::Bytes_x64_To_Hex(UBytesObject_64* B64_Object, int32 Hex_Start, int32 Hex_End, bool bIsFull)
-{
-    if (B64_Object->ByteArray.Num() == 0)
-    {
-        return "";
-    }
-
-    if (bIsFull)
-    {
-        std::stringstream Stream;
-        Stream << std::hex << std::setfill('0');
-        for (int Index = 0; Index < B64_Object->ByteArray.Num(); Index++)
-        {
-            Stream << std::hex << std::setw(2) << static_cast<int>(B64_Object->ByteArray.GetData()[Index]);
-        }
-
-        return Stream.str().c_str();
-    }
-
-    else if (Hex_Start <= Hex_End && Hex_End < B64_Object->ByteArray.Num())
-    {
-        std::stringstream Stream;
-        Stream << std::hex << std::setfill('0');
-        for (int Index = Hex_Start; Index <= Hex_End; Index++)
-        {
-            Stream << std::hex << std::setw(2) << static_cast<int>(B64_Object->ByteArray.GetData()[Index]);
-        }
-
-        return Stream.str().c_str();
-    }
-
-    else
-    {
-        return "";
-    }
-}
-
-FString UExtendedVarsBPLibrary::Bytes_x64_To_Base64(UBytesObject_64* B64_Object, bool bUseUrl)
-{
-    if (B64_Object->ByteArray.Num() == 0)
-    {
-        return "";
-    }
-
-    return FBase64::Encode(B64_Object->ByteArray.GetData(), B64_Object->ByteArray.Num(), bUseUrl ? EBase64Mode::UrlSafe : EBase64Mode::Standard);
-}
-
-FString UExtendedVarsBPLibrary::Bytes_x64_To_UTF8(UBytesObject_64* B64_Object)
-{
-    if (B64_Object->ByteArray.Num() == 0)
-    {
-        return "";
-    }
-
-    int32 Index = 0;
-    int32 Length = 0x7FFFFFFF;
-
-    if (Index < 0)
-    {
-        Length += Index;
-        Index = 0;
-    }
-
-    if (Length > B64_Object->ByteArray.Num() - Index)
-    {
-        Length = B64_Object->ByteArray.Num() - Index;
-    }
-
-    const FUTF8ToTCHAR Src(reinterpret_cast<const ANSICHAR*>(B64_Object->ByteArray.GetData() + Index), Length);
-    return FString(Src.Length(), Src.Get());
-}
-
 FString UExtendedVarsBPLibrary::Bytes_x86_To_Hex(TArray<uint8> In_Bytes, int32 Hex_Start, int32 Hex_End, bool bIsFull)
 {
     if (In_Bytes.Num() == 0)
@@ -667,65 +587,6 @@ EImageExtensions UExtendedVarsBPLibrary::DetectImageExtension(TArray<uint8> In_B
     {
         return EImageExtensions::Ext_None;
     }
-}
-
-UBytesObject_64* UExtendedVarsBPLibrary::Hex_To_Bytes_x64(FString In_Hex)
-{
-    if (In_Hex.IsEmpty())
-    {
-        return nullptr;
-    }
-
-    UBytesObject_64* BytesObject = NewObject<UBytesObject_64>();
-    
-    FString Decoded_String;
-    for (size_t Index_Chars = 0; Index_Chars < In_Hex.Len(); Index_Chars += 2)
-    {
-        //taking two characters from hex string
-        FString Part = UKismetStringLibrary::GetSubstring(In_Hex, Index_Chars, 2);
-
-        //changing it into base 16
-        char Character = std::stoul(TCHAR_TO_UTF8(*Part), nullptr, 16);
-
-        //putting it into the ASCII string
-        Decoded_String += Character;
-    }
-
-    FTCHARToUTF8 Source = FTCHARToUTF8(Decoded_String.GetCharArray().GetData());
-    BytesObject->ByteArray.Append((uint8*)Source.Get(), Source.Length());
-
-    return BytesObject;
-}
-
-UBytesObject_64* UExtendedVarsBPLibrary::UTF8_To_Bytes_x64(FString In_UTF8)
-{
-    if (In_UTF8.IsEmpty())
-    {
-        return nullptr;
-    }
-
-    UBytesObject_64* BytesObject = NewObject<UBytesObject_64>();
-
-    FTCHARToUTF8 Source = FTCHARToUTF8(In_UTF8.GetCharArray().GetData());
-    BytesObject->ByteArray.Append((uint8*)Source.Get(), Source.Length());
-
-    return BytesObject;
-}
-
-UBytesObject_64* UExtendedVarsBPLibrary::Base64_To_Bytes_x64(FString In_Base64, bool bUseUrl)
-{
-    if (In_Base64.IsEmpty())
-    {
-        return nullptr;
-    }
-
-    FWideStringView String = In_Base64;
-
-    UBytesObject_64* BytesObject = NewObject<UBytesObject_64>();
-
-    FBase64::Decode(String.GetData(), String.Len(), BytesObject->ByteArray.GetData(), bUseUrl ? EBase64Mode::UrlSafe : EBase64Mode::Standard);
-
-    return BytesObject;
 }
 
 TArray<uint8> UExtendedVarsBPLibrary::Hex_To_Bytes_x86(FString In_Hex)

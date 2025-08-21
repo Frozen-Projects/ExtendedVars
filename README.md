@@ -26,20 +26,25 @@ Plugin's itself doesn't have platform restriction but some functions are unique 
 ## Write_Group
 - Write_File_To_Path  
 
-## Bytes_Group 
-- Bytes_x64_To_Hex  
-- Bytes_x64_To_Base64  
-- Bytes_x64_To_UTF8  
+## Bytes_Group  
 - Bytes_x86_To_Hex  
 - Bytes_x86_To_Base64  
-- Bytes_x86_To_UTF8  
-- Hex_To_Bytes_x64  
-- UTF8_To_Bytes_x64  
-- Base64_To_Bytes_x64  
+- Bytes_x86_To_UTF8   
 - Hex_To_Bytes_x86  
 - UTF8_To_Bytes_x86  
 - Base64_To_Bytes_x86  
-- DetectImageExtension  
+- DetectImageExtension
+
+## 64 Bit Bytes (UE blueprints doesn't support TArray64. So, I created a container for it.)
+- Bytes_x64_To_Hex  
+- Bytes_x64_To_Base64  
+- Bytes_x64_To_UTF8 
+- Hex_To_Bytes_x64  
+- UTF8_To_Bytes_x64  
+- Base64_To_Bytes_x64 
+- Get Size
+- Set From 32 Bit Bytes
+- Get As 32 Bit Bytes
 
 ## String_Group
 - FDateTime_To_String  
