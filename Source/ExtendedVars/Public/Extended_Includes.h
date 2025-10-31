@@ -30,6 +30,7 @@
 #include "JsonUtilities.h"
 
 THIRD_PARTY_INCLUDES_START
+#include <iomanip>
 #include <string>
 #include <sstream>
 #include <chrono>

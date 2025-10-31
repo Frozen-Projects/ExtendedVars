@@ -1922,3 +1922,20 @@ double UExtendedVarsBPLibrary::GetPaintRatio(UCanvasRenderTarget2D* InCRT, FLine
 }
 
 #pragma endregion Render_Group
+
+bool UExtendedVarsBPLibrary::ReplaceObject(UPARAM(ref)UObject*& Old, UPARAM(ref)UObject*& New)
+{
+    if (!IsValid(New))
+    {
+        return false;
+    }
+
+    if (IsValid(Old))
+    {
+        Old->ConditionalBeginDestroy();
+        Old = nullptr;
+    }
+
+    Old = New;
+    return true;
+}

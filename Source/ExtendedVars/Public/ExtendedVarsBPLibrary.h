@@ -221,9 +221,12 @@ class UExtendedVarsBPLibrary : public UBlueprintFunctionLibrary
 	* @param Tolerance It is a tolerance for color comparison. Default is 1. Max is 255. Because there can be slight differences in colors while reading them. Human eye can't see differences in colors with tolerance 1.
 	* @param bLogEachColor It print each color to log. Only for debug purposes ! It will slow down the process.
 	*/
-	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Get Paint Ratio", Keywords = "PaintRatio sample test testing"), Category = "Frozen Forest|Extended Variables|Render")
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Get Paint Ratio", Keywords = "get, paint, ratio"), Category = "Frozen Forest|Extended Variables|Render")
 	static EXTENDEDVARS_API double GetPaintRatio(UCanvasRenderTarget2D* InCRT, FLinearColor InWantedColor, uint8 Tolerance = 1, bool bLogEachColor = false);
 
 #pragma endregion Render_Group
+
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Replace UObject", Keywords = "replace, uobject, object"), Category = "Frozen Forest|Extended Variables|UObject")
+	static EXTENDEDVARS_API bool ReplaceObject(UPARAM(ref)UObject*& Old, UPARAM(ref)UObject*& New);
 
 };
