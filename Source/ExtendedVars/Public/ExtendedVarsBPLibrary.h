@@ -135,10 +135,17 @@ class UExtendedVarsBPLibrary : public UBlueprintFunctionLibrary
 	UFUNCTION(BlueprintPure, meta = (DisplayName = "Base64 To String", ToolTip = "", Keywords = "string, fstring, convert, to, base64"), Category = "Frozen Forest|Extended Variables|String")
 	static EXTENDEDVARS_API bool Base64_To_String(FString& Out_Decoded, FString In_Hex, bool bUseUrl);
 
-	UFUNCTION(BlueprintPure, meta = (DisplayName = "Beautify Json", ToolTip = "", Keywords = "string, fstring, convert, to, base64"), Category = "Frozen Forest|Extended Variables|String")
+#pragma endregion String_Group
+
+#pragma region JSON_Group
+
+	UFUNCTION(BlueprintPure, meta = (DisplayName = "Beautify Json", ToolTip = "", Keywords = "string, fstring, beautify, json"), Category = "Frozen Forest|Extended Variables|JSON")
 	static EXTENDEDVARS_API FString Beautify_Json(FString In_Json);
 
-#pragma endregion String_Group
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Json Object Array", Keywords = "string, fstring, json, object, array"), Category = "Frozen Forest|Extended Variables|JSON")
+	static EXTENDEDVARS_API FString JsonObjectArray(TArray<FJsonObjectWrapper> In_Objects);
+
+#pragma endregion JSON_Group
 
 #pragma region Int_Group
 

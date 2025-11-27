@@ -802,6 +802,10 @@ bool UExtendedVarsBPLibrary::Base64_To_String(FString& Out_Decoded, FString In_B
     return true;
 }
 
+#pragma endregion String_Group
+
+#pragma region JSON_Group
+
 FString UExtendedVarsBPLibrary::Beautify_Json(FString In_Json)
 {
     TSharedPtr<FJsonObject> JsonObject = MakeShareable(new FJsonObject());
@@ -818,7 +822,23 @@ FString UExtendedVarsBPLibrary::Beautify_Json(FString In_Json)
     return FJsonSerializer::Serialize(JsonObject.ToSharedRef(), Writer) ? BeautifiedJson : FString();
 }
 
-#pragma endregion String_Group
+FString UExtendedVarsBPLibrary::JsonObjectArray(TArray<FJsonObjectWrapper> In_Objects)
+{
+    TArray<TSharedPtr<FJsonValue>> JsonArray;
+
+    for (const FJsonObjectWrapper EachJson : In_Objects)
+    {
+        JsonArray.Add(MakeShared<FJsonValueObject>(EachJson.JsonObject));
+    }
+
+    FString OutputString;
+    TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&OutputString);
+    FJsonSerializer::Serialize(JsonArray, Writer);
+
+	return OutputString;
+}
+
+#pragma endregion JSON_Group
 
 #pragma region Int_Group
 
