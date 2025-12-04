@@ -813,7 +813,7 @@ FString UExtendedVarsBPLibrary::Merge_String_Map(const TMap<FString, FString>& I
 
     for (const TPair<FString, FString>& EachPair : In_StringMap)
     {
-        MergedString += EachPair.Key + "=" + EachPair.Value + LINE_TERMINATOR;
+        MergedString += EachPair.Key + " = " + EachPair.Value + LINE_TERMINATOR;
     }
 
     return MergedString;
