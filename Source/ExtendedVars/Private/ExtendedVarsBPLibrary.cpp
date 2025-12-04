@@ -802,6 +802,23 @@ bool UExtendedVarsBPLibrary::Base64_To_String(FString& Out_Decoded, FString In_B
     return true;
 }
 
+FString UExtendedVarsBPLibrary::Merge_String_Map(const TMap<FString, FString>& In_StringMap)
+{
+    if (In_StringMap.IsEmpty())
+    {
+        return FString();
+    }
+
+	FString MergedString;
+
+    for (const TPair<FString, FString>& EachPair : In_StringMap)
+    {
+        MergedString += EachPair.Key + "=" + EachPair.Value + LINE_TERMINATOR;
+    }
+
+    return MergedString;
+}
+
 #pragma endregion String_Group
 
 #pragma region JSON_Group
@@ -2341,7 +2358,72 @@ void UExtendedVarsBPLibrary::GetNetworkInfos(TArray<FString>& Out_Adapters, FStr
 
 #elif __ANDROID__
 
-    // https ://stackoverflow.com/questions/36543720/how-to-get-mac-address-in-android-native-code
+    // https://stackoverflow.com/questions/36543720/how-to-get-mac-address-in-android-native-code
+
+#endif
+}
+
+bool UExtendedVarsBPLibrary::HelperIPConfig(FString& OutCli, bool Get_MAC_Address)
+{
+
+#ifdef _WIN64
+    if (Get_MAC_Address == true)
+    {
+        OutCli = TEXT("ipconfig /all | findstr /i \"Adapter Description IPv4 Physical\"");
+        return true;
+    }
+
+    else
+    {
+        OutCli = TEXT("ipconfig /all | findstr /i \"Adapter Description IPv4\"");
+        return true;
+    }
+
+#else
+
+    return false;
+
+#endif
+}
+
+bool UExtendedVarsBPLibrary::HelperPing(FString& OutCli, int32 PingCount, const FString IPAdress)
+{
+#ifdef _WIN64
+
+    OutCli = TEXT("ping -n ") + FString::FromInt(PingCount) + TEXT(" ") + IPAdress + TEXT(" | findstr /i \"Reply\"");
+    return true;
+
+#else
+
+    return false;
+
+#endif
+}
+
+bool UExtendedVarsBPLibrary::HelperGetCPUFromCMD(FString& OutCli)
+{
+#ifdef _WIN64
+
+    OutCli = TEXT("wmic cpu get caption, deviceid, name, numberofcores, maxclockspeed, status");
+    return true;
+
+#else
+
+    return false;
+
+#endif
+}
+
+bool UExtendedVarsBPLibrary::HelperGetGPUFromCMD(FString& OutCli)
+{
+#ifdef _WIN64
+
+    OutCli = "wmic path win32_VideoController get name, videoarchitecture, deviceID, adapterram, description";
+    return true;
+
+#else
+
+    return false;
 
 #endif
 }
@@ -2444,75 +2526,6 @@ bool UExtendedVarsBPLibrary::RunSubProcess(const FString SubProcessRelativePath,
 #endif
 }
 
-#pragma endregion External_Apps
-
-#pragma region Terminal
-
-bool UExtendedVarsBPLibrary::HelperIPConfig(FString& OutCli, bool Get_MAC_Address)
-{
-
-#ifdef _WIN64
-    if (Get_MAC_Address == true)
-    {
-        OutCli = TEXT("ipconfig /all | findstr /i \"Adapter Description IPv4 Physical\"");
-        return true;
-    }
-
-    else
-    {
-        OutCli = TEXT("ipconfig /all | findstr /i \"Adapter Description IPv4\"");
-        return true;
-    }
-
-#else
-
-    return false;
-
-#endif
-}
-
-bool UExtendedVarsBPLibrary::HelperPing(FString& OutCli, int32 PingCount, const FString IPAdress)
-{
-#ifdef _WIN64
-
-    OutCli = TEXT("ping -n ") + FString::FromInt(PingCount) + TEXT(" ") + IPAdress + TEXT(" | findstr /i \"Reply\"");
-    return true;
-
-#else
-
-    return false;
-
-#endif
-}
-
-bool UExtendedVarsBPLibrary::HelperGetCPUFromCMD(FString& OutCli)
-{
-#ifdef _WIN64
-
-    OutCli = TEXT("wmic cpu get caption, deviceid, name, numberofcores, maxclockspeed, status");
-    return true;
-
-#else
-
-    return false;
-
-#endif
-}
-
-bool UExtendedVarsBPLibrary::HelperGetGPUFromCMD(FString& OutCli)
-{
-#ifdef _WIN64
-
-    OutCli = "wmic path win32_VideoController get name, videoarchitecture, deviceID, adapterram, description";
-    return true;
-
-#else
-
-    return false;
-
-#endif
-}
-
 bool UExtendedVarsBPLibrary::HelperTaskKillByPID(FString& OutCli, int32 ProcessID)
 {
 #ifdef _WIN64
@@ -2527,6 +2540,11 @@ bool UExtendedVarsBPLibrary::HelperTaskKillByPID(FString& OutCli, int32 ProcessI
 #endif
 }
 
+#pragma endregion External_Apps
+
+#pragma region Terminal
+
+
 void UExtendedVarsBPLibrary::RunTerminalAsync(ETerminalTarget TerminalTarget, ETerminalVisibility TerminalVisibility, EPipeThreadPriority PipeThreadPriority, const FString Command, const FString OptionalWorkingDirectory, int32 Priority, int32& OutProcessID, FDelegatePipeResult DelegatePipeResult)
 {
 #ifdef _WIN64
@@ -2535,20 +2553,20 @@ void UExtendedVarsBPLibrary::RunTerminalAsync(ETerminalTarget TerminalTarget, ET
 
     switch (TerminalTarget)
     {
-    case ETerminalTarget::CMD:
+        case ETerminalTarget::CMD:
 
-        URL = TEXT("C:\\Windows\\System32\\cmd.exe");
-        break;
+            URL = TEXT("C:\\Windows\\System32\\cmd.exe");
+            break;
 
-    case ETerminalTarget::Powershell:
+        case ETerminalTarget::Powershell:
 
-        URL = TEXT("C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe");
-        break;
+            URL = TEXT("C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe");
+            break;
 
-    default:
+        default:
 
-        URL = TEXT("C:\\Windows\\System32\\cmd.exe");
-        break;
+            URL = TEXT("C:\\Windows\\System32\\cmd.exe");
+            break;
     }
 
     // Terminal Visibility Options.
@@ -2559,87 +2577,88 @@ void UExtendedVarsBPLibrary::RunTerminalAsync(ETerminalTarget TerminalTarget, ET
 
     switch (TerminalVisibility)
     {
-    case ETerminalVisibility::CMD_Hide:
-        CommandString = TEXT("/c ") + Command;
-        Hidden = true;
-        ReallyHidden = true;
-        CloseAfter = true;
-        break;
+        case ETerminalVisibility::CMD_Hide:
+            CommandString = TEXT("/c ") + Command;
+            Hidden = true;
+            ReallyHidden = true;
+            CloseAfter = true;
+            break;
 
-    case ETerminalVisibility::CMD_ShowKillAfter:
-        CommandString = TEXT("/c ") + Command;
-        Hidden = false;
-        ReallyHidden = false;
-        CloseAfter = true;
-        break;
+        case ETerminalVisibility::CMD_ShowKillAfter:
+            CommandString = TEXT("/c ") + Command;
+            Hidden = false;
+            ReallyHidden = false;
+            CloseAfter = true;
+            break;
 
-    case ETerminalVisibility::CMD_ShowLetItLive:
-        CommandString = TEXT("/k ") + Command;
-        Hidden = false;
-        ReallyHidden = false;
-        CloseAfter = false;
-        break;
+        case ETerminalVisibility::CMD_ShowLetItLive:
+            CommandString = TEXT("/k ") + Command;
+            Hidden = false;
+            ReallyHidden = false;
+            CloseAfter = false;
+            break;
 
-    case ETerminalVisibility::PS_Hide:
-        CommandString = TEXT("-mta -command \"") + Command + TEXT("\"");
-        Hidden = true;
-        ReallyHidden = true;
-        CloseAfter = true;
-        break;
+        case ETerminalVisibility::PS_Hide:
+            CommandString = TEXT("-mta -command \"") + Command + TEXT("\"");
+            Hidden = true;
+            ReallyHidden = true;
+            CloseAfter = true;
+            break;
 
-    case ETerminalVisibility::PS_ShowKillAfter:
-        CommandString = TEXT("-mta -command \"") + Command + TEXT("\"");
-        Hidden = false;
-        ReallyHidden = false;
-        CloseAfter = true;
-        break;
+        case ETerminalVisibility::PS_ShowKillAfter:
+            CommandString = TEXT("-mta -command \"") + Command + TEXT("\"");
+            Hidden = false;
+            ReallyHidden = false;
+            CloseAfter = true;
+            break;
 
-    case ETerminalVisibility::PS_ShowLetItLive:
-        CommandString = TEXT("-noexit -mta -command \"") + Command + TEXT("\"");
-        Hidden = false;
-        ReallyHidden = false;
-        CloseAfter = false;
-        break;
+        case ETerminalVisibility::PS_ShowLetItLive:
+            CommandString = TEXT("-noexit -mta -command \"") + Command + TEXT("\"");
+            Hidden = false;
+            ReallyHidden = false;
+            CloseAfter = false;
+            break;
 
-    default:
-        CommandString = TEXT("/c ") + Command;
-        Hidden = true;
-        ReallyHidden = true;
-        CloseAfter = true;
-        break;
+        default:
+            CommandString = TEXT("/c ") + Command;
+            Hidden = true;
+            ReallyHidden = true;
+            CloseAfter = true;
+            break;
     }
 
     // Thread Priority of Pipes.
     auto PipeThread = ENamedThreads::AnyNormalThreadNormalTask; // We need to define a default value for getting required variable type.
+    
     switch (PipeThreadPriority)
     {
-    case EPipeThreadPriority::HighThreadNormalTask:
-        PipeThread = ENamedThreads::AnyNormalThreadNormalTask;
-        break;
+        case EPipeThreadPriority::HighThreadNormalTask:
+            PipeThread = ENamedThreads::AnyNormalThreadNormalTask;
+            break;
 
-    case EPipeThreadPriority::HighThreadHighTask:
-        PipeThread = ENamedThreads::AnyHiPriThreadHiPriTask;
-        break;
+        case EPipeThreadPriority::HighThreadHighTask:
+            PipeThread = ENamedThreads::AnyHiPriThreadHiPriTask;
+            break;
 
-    case EPipeThreadPriority::NormalThreadNormalTask:
-        PipeThread = ENamedThreads::AnyNormalThreadNormalTask;
-        break;
+        case EPipeThreadPriority::NormalThreadNormalTask:
+            PipeThread = ENamedThreads::AnyNormalThreadNormalTask;
+            break;
 
-    case EPipeThreadPriority::NormalThreadHighTask:
-        PipeThread = ENamedThreads::AnyNormalThreadHiPriTask;
-        break;
+        case EPipeThreadPriority::NormalThreadHighTask:
+            PipeThread = ENamedThreads::AnyNormalThreadHiPriTask;
+            break;
 
-    case EPipeThreadPriority::BackgroundNormal:
-        PipeThread = ENamedThreads::AnyBackgroundThreadNormalTask;
-        break;
+        case EPipeThreadPriority::BackgroundNormal:
+            PipeThread = ENamedThreads::AnyBackgroundThreadNormalTask;
+            break;
 
-    case EPipeThreadPriority::BackgroundHigh:
-        PipeThread = ENamedThreads::AnyBackgroundHiPriTask;
-        break;
+        case EPipeThreadPriority::BackgroundHigh:
+            PipeThread = ENamedThreads::AnyBackgroundHiPriTask;
+            break;
 
-    default:
-        PipeThread = ENamedThreads::AnyNormalThreadNormalTask;
-        break;
+        default:
+            PipeThread = ENamedThreads::AnyNormalThreadNormalTask;
+            break;
     }
 
     AsyncTask(PipeThread, [DelegatePipeResult, URL, CommandString, Hidden, ReallyHidden, CloseAfter, OutProcessID, Priority, OptionalWorkingDirectory]()
