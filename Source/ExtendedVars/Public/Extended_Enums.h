@@ -45,3 +45,43 @@ enum class EGammaSpaceBp : uint8
 	sRGB		UMETA(DisplayName = "sRGB"),
 };
 ENUM_CLASS_FLAGS(EGammaSpaceBp)
+
+UENUM(BlueprintType)
+enum class ERegeditRoot : uint8
+{
+	Machine		UMETA(DisplayName = "Machine"),
+	User		UMETA(DisplayName = "User"),
+};
+ENUM_CLASS_FLAGS(ERegeditRoot)
+
+UENUM(BlueprintType)
+enum class ETerminalTarget : uint8
+{
+	CMD			UMETA(DisplayName = "CMD"),
+	Powershell	UMETA(DisplayName = "Powershell"),
+};
+ENUM_CLASS_FLAGS(ETerminalTarget)
+
+UENUM(BlueprintType)
+enum class ETerminalVisibility : uint8
+{
+	CMD_Hide			UMETA(DisplayName = "CMD_Hide"),
+	CMD_ShowKillAfter	UMETA(DisplayName = "CMD_ShowKillAfter"),
+	CMD_ShowLetItLive	UMETA(DisplayName = "CMD_ShowLetItLive"),
+	PS_Hide				UMETA(DisplayName = "PS_Hide"),
+	PS_ShowKillAfter	UMETA(DisplayName = "PS_ShowKillAfter"),
+	PS_ShowLetItLive	UMETA(DisplayName = "PS_ShowLetItLive"),
+};
+ENUM_CLASS_FLAGS(ETerminalVisibility)
+
+UENUM(BlueprintType)
+enum class EPipeThreadPriority : uint8
+{
+	HighThreadNormalTask		UMETA(DisplayName = "High Priority Thread for Normal Task"),
+	HighThreadHighTask			UMETA(DisplayName = "High Priority Thread for High Task"),
+	NormalThreadNormalTask		UMETA(DisplayName = "Normal Priority Thread for Normal Task"),
+	NormalThreadHighTask		UMETA(DisplayName = "Normal Priority Thread for High Task"),
+	BackgroundNormal			UMETA(DisplayName = "Background Thread for Normal Task"),
+	BackgroundHigh				UMETA(DisplayName = "Background Thread for High Task"),
+};
+ENUM_CLASS_FLAGS(EPipeThreadPriority)

@@ -1943,6 +1943,8 @@ double UExtendedVarsBPLibrary::GetPaintRatio(UCanvasRenderTarget2D* InCRT, FLine
 
 #pragma endregion Render_Group
 
+#pragma region System
+
 bool UExtendedVarsBPLibrary::ReplaceObject(UPARAM(ref)UObject*& Old, UPARAM(ref)UObject*& New)
 {
     if (!IsValid(New))
@@ -1959,3 +1961,782 @@ bool UExtendedVarsBPLibrary::ReplaceObject(UPARAM(ref)UObject*& Old, UPARAM(ref)
     Old = New;
     return true;
 }
+
+bool UExtendedVarsBPLibrary::GetWorkingDir(FString& DirPath)
+{
+#ifdef _WIN64
+
+    DirPath = FWindowsPlatformProcess::GetCurrentWorkingDirectory();
+    return true;
+
+#else 
+
+    return false;
+
+#endif
+}
+
+bool UExtendedVarsBPLibrary::DisablePluginAtRuntime(const FString PluginName)
+{
+    return FGenericPlatformMisc::ShouldDisablePluginAtRuntime(PluginName);
+}
+
+bool UExtendedVarsBPLibrary::ReadRegeditValue(FString& OutRegedit, ERegeditRoot RegistryRoot, const FString KeyName, const FString ValueName)
+{
+#ifdef _WIN64
+    // Initial varlables.
+    HKEY hKey;
+    LONG Result;
+
+    // Switch for search directory.
+    switch (RegistryRoot)
+    {
+    case ERegeditRoot::Machine:
+        Result = RegOpenKeyExW(HKEY_LOCAL_MACHINE, *KeyName, 0, KEY_READ, &hKey);
+        break;
+
+    case ERegeditRoot::User:
+        Result = RegOpenKeyExW(HKEY_CURRENT_USER, *KeyName, 0, KEY_READ, &hKey);
+        break;
+
+    default:
+        Result = RegOpenKeyExW(HKEY_LOCAL_MACHINE, *KeyName, 0, KEY_READ, &hKey);
+        break;
+    }
+
+    if (Result != ERROR_SUCCESS)
+    {
+        // Handle error. 
+    }
+
+    // Execute search.
+    TCHAR* Buffer = (TCHAR*)malloc(MAX_PATH);
+    DWORD BufferSize = sizeof(TCHAR) * MAX_PATH;
+    HRESULT hResult = RegQueryValueEx(hKey, *ValueName, 0, nullptr, reinterpret_cast<LPBYTE>(Buffer), &BufferSize);
+
+    if (hResult != ERROR_SUCCESS)
+    {
+        // Handle error. 
+    }
+
+    OutRegedit = FString(Buffer);
+
+    free(Buffer);
+    Buffer = nullptr;
+
+    return true;
+
+#else
+
+    return false;
+
+#endif
+}
+
+void UExtendedVarsBPLibrary::ForceShutdownPC()
+{
+#ifdef _WIN64
+    system("c:\\windows\\system32\\shutdown /p /f");
+#endif
+}
+
+bool UExtendedVarsBPLibrary::RestartApplication()
+{
+
+#ifdef _WIN64
+
+    FWindowsPlatformMisc::RestartApplication();
+    return true;
+
+#else
+
+    return false;
+
+#endif
+}
+
+void UExtendedVarsBPLibrary::SplashScreenVisibility(bool HideSplashScreen)
+{
+#ifdef _WIN64
+    FWindowsPlatformMisc::PlatformHandleSplashScreen(HideSplashScreen);
+#endif
+}
+
+#pragma endregion System
+
+#pragma region Profiling
+
+void UExtendedVarsBPLibrary::GetMonitorNames(FDelegateMonitorNames DelegateMonitorNames)
+{
+
+#ifdef _WIN64
+
+    AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [DelegateMonitorNames]()
+        {
+            // Declare Function String.
+            std::string PowershellFunction;
+
+            const FString RequestTime = FDateTime::UtcNow().ToString();
+            FString TempFilePath = FPaths::ConvertRelativePathToFull(FPaths::ProjectLogDir()) + RequestTime + ".txt";
+            TempFilePath.ReplaceInline(UTF8_TO_TCHAR("/"), UTF8_TO_TCHAR("\\\\"), ESearchCase::IgnoreCase);
+
+            // ASCII Decode Section.
+            PowershellFunction += "Out-File \"";
+            PowershellFunction += TCHAR_TO_UTF8(*TempFilePath);
+            PowershellFunction += "\"\n";
+            PowershellFunction += "function Monitors\n";
+            PowershellFunction += "{\nIf ($args[0] -is [System.Array])\n";
+            PowershellFunction += "{\n[System.Text.Encoding]::ASCII.GetString($args[0])\n}\n}";
+
+            // Get Monitor Names Section.
+            PowershellFunction += "ForEach ($Monitor in Get-WmiObject WmiMonitorID -Namespace root\\wmi)\n";
+            PowershellFunction += "{$Delimeter = \"///\"\n";
+            PowershellFunction += "$ManufNameSpace = \"_\"\n";
+            PowershellFunction += "$Manufacturer = ($Monitor.ManufacturerName -notmatch 0 | ForEach{[char]$_}) -join \"\"\n";
+            PowershellFunction += "$Name = Monitors ($Monitor.UserFriendlyName -notmatch 0 | ForEach{[char]$_}) -join \"\"\n";
+            PowershellFunction += "$Manufacturer + $ManufNameSpace + $Name + $Delimeter | Out-File -FilePath \"";
+            PowershellFunction += TCHAR_TO_UTF8(*TempFilePath);
+            PowershellFunction += "\" -Append -NoNewline\n}";
+
+            // Create a temporary Powershell file with defined powershell function.
+            FString PSFileName = RequestTime + ".ps1";
+
+            std::ofstream PowershellFile;
+            PowershellFile.open(*PSFileName);
+            PowershellFile << PowershellFunction << std::endl;
+            PowershellFile.close();
+
+            // Execute Powershell function and remove it after.
+            FString SystemParameter = "powershell -WindowStyle Hidden -ExecutionPolicy Bypass -F " + PSFileName;
+            system(TCHAR_TO_ANSI(*SystemParameter));
+            remove(TCHAR_TO_ANSI(*PSFileName));
+
+            // Create PlatformFile to check result file's integrity.
+            IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
+
+            if (PlatformFile.FileExists(*TempFilePath) == true)
+            {
+                // Read Powershell result and remove it after.
+                FString PowershellResult;
+                FFileHelper::LoadFileToString(PowershellResult, *TempFilePath);
+                PlatformFile.DeleteFile(*TempFilePath);
+
+                if (PowershellResult.IsEmpty() == false)
+                {
+                    TArray<FString> OutMonitorNames;
+                    FString Delimeter = "///";
+                    PowershellResult.ParseIntoArray(OutMonitorNames, *Delimeter, true);
+
+                    AsyncTask(ENamedThreads::GameThread, [DelegateMonitorNames, OutMonitorNames]()
+                        {
+                            DelegateMonitorNames.ExecuteIfBound(true, FString::FromInt(OutMonitorNames.Num()) + " Monitor Found !", OutMonitorNames);
+                        }
+                    );
+
+                    return;
+                }
+
+                else
+                {
+                    AsyncTask(ENamedThreads::GameThread, [DelegateMonitorNames]()
+                        {
+                            DelegateMonitorNames.ExecuteIfBound(false, "No monitor found !", TArray<FString>());
+                        }
+                    );
+
+                    return;
+                }
+            }
+
+            else
+            {
+                AsyncTask(ENamedThreads::GameThread, [DelegateMonitorNames]()
+                    {
+                        DelegateMonitorNames.ExecuteIfBound(false, "Powershell function didn't work !", TArray<FString>());
+                    }
+                );
+
+                return;
+            }
+        }
+    );
+
+#else 
+
+    AsyncTask(ENamedThreads::GameThread, [DelegateMonitorNames]()
+        {
+            DelegateMonitorNames.ExecuteIfBound(false, "Platforms other than Microsoft Windows don't supported.", TArray<FString>());
+        }
+    );
+
+    return;
+
+#endif
+}
+
+void UExtendedVarsBPLibrary::GetMonitorInfos(TArray<FMonitorInfos>& OutMonitorInfos)
+{
+#ifdef _WIN64
+
+    DISPLAY_DEVICE AdapterDevices;
+    AdapterDevices.cb = sizeof(AdapterDevices);
+    int32 AdapterIndex = 0;
+
+    TArray<FMonitorInfos> TempInfos;
+
+    while (EnumDisplayDevicesW(NULL, AdapterIndex, &AdapterDevices, EDD_GET_DEVICE_INTERFACE_NAME))
+    {
+        std::wstring AdapterName = AdapterDevices.DeviceName;
+
+        DISPLAY_DEVICE MonitorDevices;
+        MonitorDevices.cb = sizeof(MonitorDevices);
+        int32 MonitorIndex = 0;
+
+        while (EnumDisplayDevicesW(AdapterName.c_str(), MonitorIndex, &MonitorDevices, 0))
+        {
+            FMonitorInfos EachMonitor;
+            EachMonitor.MonitorID = MonitorDevices.DeviceID;
+            EachMonitor.MonitorKey = MonitorDevices.DeviceKey;
+            EachMonitor.MonitorName = MonitorDevices.DeviceName;
+            EachMonitor.MonitorString = MonitorDevices.DeviceString;
+
+            TempInfos.Add(EachMonitor);
+
+            MonitorIndex++;
+        }
+
+        AdapterIndex++;
+    }
+
+    OutMonitorInfos = TempInfos;
+
+#else
+    return;
+#endif
+}
+
+void UExtendedVarsBPLibrary::GetDesktopResolution(int32 MonitorIndex, FVector2D& PrimaryResolution, FVector2D& TotalResolution, FVector2D& MonitorStart, FVector2D& MonitorResolution, float& MonitorDPI)
+{
+    FDisplayMetrics Display;
+    FDisplayMetrics::RebuildDisplayMetrics(Display);
+
+    PrimaryResolution.X = Display.PrimaryDisplayWidth;
+    PrimaryResolution.Y = Display.PrimaryDisplayHeight;
+
+    TotalResolution.X = Display.VirtualDisplayRect.Right - Display.VirtualDisplayRect.Left;
+    TotalResolution.Y = Display.VirtualDisplayRect.Bottom - Display.VirtualDisplayRect.Top;
+
+    const FMonitorInfo Monitor = Display.MonitorInfo[MonitorIndex];
+    MonitorStart.X = Monitor.WorkArea.Left;
+    MonitorStart.Y = Monitor.WorkArea.Top;
+
+    MonitorResolution.X = Monitor.DisplayRect.Right - Monitor.DisplayRect.Left;
+    MonitorResolution.Y = Monitor.DisplayRect.Bottom - Monitor.DisplayRect.Top;
+
+    MonitorDPI = Monitor.DPI;
+}
+
+bool UExtendedVarsBPLibrary::GetCPU(FString& OutCpu)
+{
+
+#ifdef _WIN64
+
+    FString CPUBrand = FWindowsPlatformMisc::GetCPUBrand();
+    int CoreCount = FWindowsPlatformMisc::NumberOfCores();
+    int32 ThreadCount = FWindowsPlatformMisc::NumberOfCoresIncludingHyperthreads();
+
+    OutCpu = CPUBrand + TEXT("\n") + FString::FromInt(CoreCount) + TEXT("\n") + FString::FromInt(ThreadCount);
+    return true;
+
+#else
+
+    return false;
+
+#endif
+}
+
+void UExtendedVarsBPLibrary::GetAppPerformanceMetrics(int32& OutFPS, float& OutRenderThreadTime, float& OutGameThreadTime, float& OutGPUTime)
+{
+    OutFPS = FMath::TruncToInt32(1000 / (1000 * FApp::GetDeltaTime()));
+
+    extern RENDERCORE_API uint32 GRenderThreadTime;
+    extern RENDERCORE_API uint32 GGameThreadTime;
+    OutRenderThreadTime = FPlatformTime::ToMilliseconds(GRenderThreadTime);
+    OutGameThreadTime = FPlatformTime::ToMilliseconds(GGameThreadTime);
+    OutGPUTime = FGenericPlatformTime::ToMilliseconds(RHIGetGPUFrameCycles());
+}
+
+void UExtendedVarsBPLibrary::GetNetworkInfos(TArray<FString>& Out_Adapters, FString& OutHostname, FString& OutHostAddr, FString& OutMac)
+{
+    /*
+    * Windows Only Version
+
+    char name[MAX_COMPUTERNAME_LENGTH + 1];
+    DWORD size = sizeof(name);
+    GetComputerNameA(name, &size);
+    */
+
+    // Create and initialize platform socket subsystem.
+    ISocketSubsystem* SocketSubsystem = ISocketSubsystem::Get(PLATFORM_SOCKETSUBSYSTEM);
+
+    // Get Device Name as host name.
+    SocketSubsystem->GetHostName(OutHostname);
+
+    // Get all active adapters.
+    TArray<TSharedPtr<FInternetAddr>> Array_Adapters;
+    SocketSubsystem->GetLocalAdapterAddresses(Array_Adapters);
+
+    for (int32 IndexAddress = 0; IndexAddress < Array_Adapters.Num(); IndexAddress++)
+    {
+        Out_Adapters.Add(Array_Adapters[IndexAddress].ToSharedRef().Get().ToString(false));
+    }
+
+    // Get Local IP Address as host address.
+    bool canBind = false;
+    TSharedRef<FInternetAddr> HostAddress = SocketSubsystem->GetLocalHostAddr(*GLog, canBind);
+    OutHostAddr = HostAddress->ToString(false);
+
+    // Get MAC Address
+#ifdef _WIN64
+
+    DWORD dwBufLen = sizeof(IP_ADAPTER_INFO);
+    PIP_ADAPTER_INFO AdapterInfo = (IP_ADAPTER_INFO*)malloc(dwBufLen);
+
+    if (GetAdaptersInfo(AdapterInfo, &dwBufLen) == ERROR_BUFFER_OVERFLOW)
+    {
+        free(AdapterInfo);
+        AdapterInfo = (IP_ADAPTER_INFO*)malloc(dwBufLen);
+
+        if (AdapterInfo == NULL)
+        {
+            return;
+        }
+    }
+
+    if (GetAdaptersInfo(AdapterInfo, &dwBufLen) == NO_ERROR)
+    {
+        char mac_addr[18];
+        PIP_ADAPTER_INFO pAdapterInfo = AdapterInfo;
+
+        while (pAdapterInfo)
+        {
+            sprintf_s(mac_addr, 18, "%02X:%02X:%02X:%02X:%02X:%02X",
+                pAdapterInfo->Address[0],
+                pAdapterInfo->Address[1],
+                pAdapterInfo->Address[2],
+                pAdapterInfo->Address[3],
+                pAdapterInfo->Address[4],
+                pAdapterInfo->Address[5]);
+
+            pAdapterInfo = pAdapterInfo->Next;
+        }
+
+        OutMac = mac_addr;
+
+        free(AdapterInfo);
+        AdapterInfo = nullptr;
+
+        return;
+    }
+
+#elif __ANDROID__
+
+    // https ://stackoverflow.com/questions/36543720/how-to-get-mac-address-in-android-native-code
+
+#endif
+}
+
+#pragma endregion Profiling
+
+#pragma region External_Apps
+
+bool UExtendedVarsBPLibrary::RunExternalApp(const FString AppPath, const FString Parameters, int32& OutProcessID, FString& StdOut, FString& StdErr)
+{
+#ifdef _WIN64
+
+    bool Success = FWindowsPlatformProcess::ExecProcess(*AppPath, *Parameters, &OutProcessID, &StdOut, &StdErr);
+    return Success;
+
+#else
+
+    return false;
+
+#endif
+}
+
+bool UExtendedVarsBPLibrary::RunExternalAppAdmin(const FString AppPath, const FString Parameters, int32& OutProcessID)
+{
+
+#ifdef _WIN64
+
+    bool Success = FWindowsPlatformProcess::ExecElevatedProcess(*AppPath, *Parameters, &OutProcessID);
+    return Success;
+
+#else 
+
+    return false;
+
+#endif
+}
+
+bool UExtendedVarsBPLibrary::RunExternalAppAsync(const FString AppPath, const FString Parameters, FString OptionalWorkingDirectory, bool Detached, bool Hidden, bool ReallyHidden, int32 Priority, int32& OutProcessID)
+{
+#ifdef _WIN64
+
+    // Create Process
+    FProcHandle RunAppAsync = FWindowsPlatformProcess::CreateProc(*AppPath, *Parameters, Detached, Hidden, ReallyHidden, (uint32_t*)&OutProcessID, Priority, OptionalWorkingDirectory.IsEmpty() ? NULL : *OptionalWorkingDirectory, nullptr, nullptr);
+
+    if (!RunAppAsync.IsValid())
+    {
+        return false;
+    }
+
+    return true;
+
+#else
+
+    return false;
+
+#endif
+}
+
+bool UExtendedVarsBPLibrary::RunSubProcess(const FString SubProcessRelativePath, bool bIsDetached, bool bIsHidden, bool bIsReallyHidden, int32& OutProcessID, FString& SubProcessPathSave)
+{
+#ifdef _WIN64
+    const FString SubProcessPathCoocked = FPaths::ProjectContentDir() + SubProcessRelativePath;
+    SubProcessPathSave = FPaths::ProjectSavedDir() + SubProcessRelativePath;
+
+    if (FPaths::FileExists(SubProcessPathSave) == true)
+    {
+        FProcHandle SubProcess = FWindowsPlatformProcess::CreateProc(*SubProcessPathSave, NULL, bIsDetached, bIsHidden, bIsReallyHidden, (uint32_t*)&OutProcessID, 0, NULL, nullptr, nullptr);
+
+        if (SubProcess.IsValid() == true)
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    else
+    {
+        TArray<uint8> ServerContents;
+        FFileHelper::LoadFileToArray(ServerContents, *SubProcessPathCoocked);
+        FFileHelper::SaveArrayToFile(ServerContents, *SubProcessPathSave);
+
+        FProcHandle SubProcess = FWindowsPlatformProcess::CreateProc(*SubProcessPathSave, NULL, bIsDetached, bIsHidden, bIsReallyHidden, (uint32_t*)&OutProcessID, 0, NULL, nullptr, nullptr);
+
+        if (SubProcess.IsValid() == true)
+        {
+            return true;
+        }
+
+        else
+        {
+            return false;
+        }
+    }
+
+#else
+
+    return false;
+
+#endif
+}
+
+#pragma endregion External_Apps
+
+#pragma region Terminal
+
+bool UExtendedVarsBPLibrary::HelperIPConfig(FString& OutCli, bool Get_MAC_Address)
+{
+
+#ifdef _WIN64
+    if (Get_MAC_Address == true)
+    {
+        OutCli = TEXT("ipconfig /all | findstr /i \"Adapter Description IPv4 Physical\"");
+        return true;
+    }
+
+    else
+    {
+        OutCli = TEXT("ipconfig /all | findstr /i \"Adapter Description IPv4\"");
+        return true;
+    }
+
+#else
+
+    return false;
+
+#endif
+}
+
+bool UExtendedVarsBPLibrary::HelperPing(FString& OutCli, int32 PingCount, const FString IPAdress)
+{
+#ifdef _WIN64
+
+    OutCli = TEXT("ping -n ") + FString::FromInt(PingCount) + TEXT(" ") + IPAdress + TEXT(" | findstr /i \"Reply\"");
+    return true;
+
+#else
+
+    return false;
+
+#endif
+}
+
+bool UExtendedVarsBPLibrary::HelperGetCPUFromCMD(FString& OutCli)
+{
+#ifdef _WIN64
+
+    OutCli = TEXT("wmic cpu get caption, deviceid, name, numberofcores, maxclockspeed, status");
+    return true;
+
+#else
+
+    return false;
+
+#endif
+}
+
+bool UExtendedVarsBPLibrary::HelperGetGPUFromCMD(FString& OutCli)
+{
+#ifdef _WIN64
+
+    OutCli = "wmic path win32_VideoController get name, videoarchitecture, deviceID, adapterram, description";
+    return true;
+
+#else
+
+    return false;
+
+#endif
+}
+
+bool UExtendedVarsBPLibrary::HelperTaskKillByPID(FString& OutCli, int32 ProcessID)
+{
+#ifdef _WIN64
+
+    OutCli = TEXT("taskkill /F /PID ") + FString::FromInt(ProcessID);
+    return true;
+
+#else
+
+    return false;
+
+#endif
+}
+
+void UExtendedVarsBPLibrary::RunTerminalAsync(ETerminalTarget TerminalTarget, ETerminalVisibility TerminalVisibility, EPipeThreadPriority PipeThreadPriority, const FString Command, const FString OptionalWorkingDirectory, int32 Priority, int32& OutProcessID, FDelegatePipeResult DelegatePipeResult)
+{
+#ifdef _WIN64
+    // Target Terminal Options.
+    const TCHAR* URL;
+
+    switch (TerminalTarget)
+    {
+    case ETerminalTarget::CMD:
+
+        URL = TEXT("C:\\Windows\\System32\\cmd.exe");
+        break;
+
+    case ETerminalTarget::Powershell:
+
+        URL = TEXT("C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe");
+        break;
+
+    default:
+
+        URL = TEXT("C:\\Windows\\System32\\cmd.exe");
+        break;
+    }
+
+    // Terminal Visibility Options.
+    bool Hidden = false;
+    bool ReallyHidden = false;
+    bool CloseAfter = true;
+    FString CommandString;
+
+    switch (TerminalVisibility)
+    {
+    case ETerminalVisibility::CMD_Hide:
+        CommandString = TEXT("/c ") + Command;
+        Hidden = true;
+        ReallyHidden = true;
+        CloseAfter = true;
+        break;
+
+    case ETerminalVisibility::CMD_ShowKillAfter:
+        CommandString = TEXT("/c ") + Command;
+        Hidden = false;
+        ReallyHidden = false;
+        CloseAfter = true;
+        break;
+
+    case ETerminalVisibility::CMD_ShowLetItLive:
+        CommandString = TEXT("/k ") + Command;
+        Hidden = false;
+        ReallyHidden = false;
+        CloseAfter = false;
+        break;
+
+    case ETerminalVisibility::PS_Hide:
+        CommandString = TEXT("-mta -command \"") + Command + TEXT("\"");
+        Hidden = true;
+        ReallyHidden = true;
+        CloseAfter = true;
+        break;
+
+    case ETerminalVisibility::PS_ShowKillAfter:
+        CommandString = TEXT("-mta -command \"") + Command + TEXT("\"");
+        Hidden = false;
+        ReallyHidden = false;
+        CloseAfter = true;
+        break;
+
+    case ETerminalVisibility::PS_ShowLetItLive:
+        CommandString = TEXT("-noexit -mta -command \"") + Command + TEXT("\"");
+        Hidden = false;
+        ReallyHidden = false;
+        CloseAfter = false;
+        break;
+
+    default:
+        CommandString = TEXT("/c ") + Command;
+        Hidden = true;
+        ReallyHidden = true;
+        CloseAfter = true;
+        break;
+    }
+
+    // Thread Priority of Pipes.
+    auto PipeThread = ENamedThreads::AnyNormalThreadNormalTask; // We need to define a default value for getting required variable type.
+    switch (PipeThreadPriority)
+    {
+    case EPipeThreadPriority::HighThreadNormalTask:
+        PipeThread = ENamedThreads::AnyNormalThreadNormalTask;
+        break;
+
+    case EPipeThreadPriority::HighThreadHighTask:
+        PipeThread = ENamedThreads::AnyHiPriThreadHiPriTask;
+        break;
+
+    case EPipeThreadPriority::NormalThreadNormalTask:
+        PipeThread = ENamedThreads::AnyNormalThreadNormalTask;
+        break;
+
+    case EPipeThreadPriority::NormalThreadHighTask:
+        PipeThread = ENamedThreads::AnyNormalThreadHiPriTask;
+        break;
+
+    case EPipeThreadPriority::BackgroundNormal:
+        PipeThread = ENamedThreads::AnyBackgroundThreadNormalTask;
+        break;
+
+    case EPipeThreadPriority::BackgroundHigh:
+        PipeThread = ENamedThreads::AnyBackgroundHiPriTask;
+        break;
+
+    default:
+        PipeThread = ENamedThreads::AnyNormalThreadNormalTask;
+        break;
+    }
+
+    AsyncTask(PipeThread, [DelegatePipeResult, URL, CommandString, Hidden, ReallyHidden, CloseAfter, OutProcessID, Priority, OptionalWorkingDirectory]()
+        {
+            // Optional Working Directory should specifically send NULL value to CreateProc if there is no entry.
+            const TCHAR* OptWorkDir = nullptr;
+
+            if (!OptionalWorkingDirectory.IsEmpty())
+            {
+                OptWorkDir = (*OptionalWorkingDirectory);
+            }
+
+            // Create pipe for communication.
+            void* PipeRead;
+            void* PipeWrite;
+            FWindowsPlatformProcess::CreatePipe(PipeRead, PipeWrite);
+
+            // Create Process. Process handle construction can not be captured in lambda expression. So we need to create it in this task.
+            FProcHandle TerminalAsync = FWindowsPlatformProcess::CreateProc(URL, *CommandString, false, Hidden, ReallyHidden, (uint32_t*)&OutProcessID, Priority, OptWorkDir, PipeWrite, PipeRead);
+
+            if (TerminalAsync.IsValid())
+            {
+                FString TerminalResult;
+
+                while (FWindowsPlatformProcess::IsProcRunning(TerminalAsync))
+                {
+                    TerminalResult += FWindowsPlatformProcess::ReadPipe(PipeRead);
+                }
+
+                // Check terminal visibility options and if CloseAfter is true, close process executions.
+                if (CloseAfter == true)
+                {
+                    FWindowsPlatformProcess::ClosePipe(PipeRead, PipeWrite);
+                    FWindowsPlatformProcess::CloseProc(TerminalAsync);
+                }
+
+                delete(PipeRead);
+                delete(PipeWrite);
+
+                // This will give final result.
+                AsyncTask(ENamedThreads::GameThread, [DelegatePipeResult, TerminalResult]()
+                    {
+                        DelegatePipeResult.ExecuteIfBound(true, TerminalResult);
+                    }
+                );
+
+                return;
+            }
+
+            // If process is not valid, close pipe and process and return error values.
+            else
+            {
+                FWindowsPlatformProcess::ClosePipe(PipeRead, PipeWrite);
+                FWindowsPlatformProcess::CloseProc(TerminalAsync);
+
+                delete(PipeRead);
+                delete(PipeWrite);
+
+                AsyncTask(ENamedThreads::GameThread, [DelegatePipeResult]()
+                    {
+                        DelegatePipeResult.ExecuteIfBound(false, TEXT("Nothing Happened !"));
+                    }
+                );
+            }
+        }
+    );
+#endif
+}
+
+void UExtendedVarsBPLibrary::RunCMDAsync(const FString Command, FDelegatePipeResult DelegatePipeResult)
+{
+#ifdef _WIN64
+    AsyncTask(ENamedThreads::AnyNormalThreadNormalTask, [DelegatePipeResult, Command]()
+        {
+            // Initial variables.
+            std::array<char, 128> Buffer;
+            FString Result;
+
+            // Execute CMD command.
+            FILE* PipeCMD = _popen(TCHAR_TO_ANSI(*Command), "r");
+
+            // Get results while execution and write to result string.
+            while (fgets(Buffer.data(), Buffer.size(), PipeCMD) != nullptr)
+            {
+                Result += Buffer.data();
+            }
+
+            _pclose(PipeCMD);
+
+            AsyncTask(ENamedThreads::GameThread, [DelegatePipeResult, Result]()
+                {
+                    DelegatePipeResult.ExecuteIfBound(true, Result);
+                }
+            );
+        }
+    );
+#endif
+}
+
+#pragma endregion Terminal

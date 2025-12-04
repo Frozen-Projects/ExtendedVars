@@ -27,10 +27,13 @@ public class ExtendedVars : ModuleRules
 				"Engine",
 				"Slate",
 				"SlateCore",
-                "RHI",				// FRHICommandListImmediate and Enqueue Rendering Commands
-				"RenderCore",		// FRHICommandListImmediate and Enqueue Rendering Commands
+                "RHI",
+				"RenderCore",
 				"UMG",
                 "ImageWrapper",
+                "ApplicationCore",
+                "Networking",
+				"Sockets",
                 "Json",
                 "JsonUtilities",
                 "JsonBlueprintUtilities",
