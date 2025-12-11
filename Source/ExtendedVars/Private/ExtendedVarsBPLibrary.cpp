@@ -20,8 +20,22 @@ URuntimeFont* UExtendedVarsBPLibrary::Runtime_Font_Load(TArray<uint8> In_Bytes, 
 
     UFont* Font = NewObject<UFont>();
     Font->FontCacheType = EFontCacheType::Runtime;
+
+#if (ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION > 7) || (ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION == 7 && ENGINE_PATCH_VERSION >= 1)
+
+    FCompositeFont& CompositeFont = Font->GetMutableInternalCompositeFont();
+    TArray<FTypefaceEntry>& Array_Fonts = CompositeFont.DefaultTypeface.Fonts;
+    FTypefaceEntry& TypefaceEntry = Array_Fonts[Array_Fonts.AddDefaulted()];
+
+#else
+
     FTypefaceEntry& TypefaceEntry = Font->CompositeFont.DefaultTypeface.Fonts[Font->CompositeFont.DefaultTypeface.Fonts.AddDefaulted()];
+
+#endif
+    
+    TypefaceEntry.Name = FName(*FontName);
     TypefaceEntry.Font = FFontData(FontFace);
+
     Font->AddToRoot();
 
     URuntimeFont* RuntimeFont = NewObject<URuntimeFont>();
@@ -802,16 +816,16 @@ bool UExtendedVarsBPLibrary::Base64_To_String(FString& Out_Decoded, FString In_B
     return true;
 }
 
-FString UExtendedVarsBPLibrary::Merge_String_Map(const TMap<FString, FString>& In_StringMap)
+FString UExtendedVarsBPLibrary::Merge_Map_To_String(const TMap<FString, FString>& In_Map)
 {
-    if (In_StringMap.IsEmpty())
+    if (In_Map.IsEmpty())
     {
         return FString();
     }
 
 	FString MergedString;
 
-    for (const TPair<FString, FString>& EachPair : In_StringMap)
+    for (const TPair<FString, FString>& EachPair : In_Map)
     {
         MergedString += EachPair.Key + " = " + EachPair.Value + LINE_TERMINATOR;
     }
@@ -822,6 +836,23 @@ FString UExtendedVarsBPLibrary::Merge_String_Map(const TMap<FString, FString>& I
 #pragma endregion String_Group
 
 #pragma region JSON_Group
+
+FJsonObjectWrapper UExtendedVarsBPLibrary::Merge_Map_To_JSon(const TMap<FString, FString>& In_Map)
+{
+	FJsonObjectWrapper ResultJson;
+
+    if (In_Map.IsEmpty())
+    {
+        return ResultJson;
+    }
+
+    for (const TPair<FString, FString>& EachPair : In_Map)
+    {
+		ResultJson.JsonObject->SetStringField(EachPair.Key, EachPair.Value);
+    }
+
+	return ResultJson;
+}
 
 FString UExtendedVarsBPLibrary::Beautify_Json(FString In_Json)
 {

@@ -164,12 +164,15 @@ class UExtendedVarsBPLibrary : public UBlueprintFunctionLibrary
 	UFUNCTION(BlueprintPure, meta = (DisplayName = "Base64 To String", ToolTip = "", Keywords = "string, fstring, convert, to, base64"), Category = "Frozen Forest|Extended Variables|String")
 	static EXTENDEDVARS_API bool Base64_To_String(FString& Out_Decoded, FString In_Hex, bool bUseUrl);
 
-	UFUNCTION(BlueprintPure, meta = (DisplayName = "Merge String Map", ToolTip = "", Keywords = "string, fstring, convert, from, tmap, map"), Category = "Frozen Forest|Extended Variables|String")
-	static EXTENDEDVARS_API FString Merge_String_Map(const TMap<FString, FString>& In_StringMap);
+	UFUNCTION(BlueprintPure, meta = (DisplayName = "Merge Map to String", ToolTip = "", Keywords = "merge, tmap, map, to, fstring, string"), Category = "Frozen Forest|Extended Variables|String")
+	static EXTENDEDVARS_API FString Merge_Map_To_String(const TMap<FString, FString>& In_Map);
 
 #pragma endregion String_Group
 
 #pragma region JSON_Group
+
+	UFUNCTION(BlueprintPure, meta = (DisplayName = "Merge Map to Json", ToolTip = "", Keywords = "merge, tmap, map, to, json, convert"), Category = "Frozen Forest|Extended Variables|JSON")
+	static EXTENDEDVARS_API FJsonObjectWrapper Merge_Map_To_JSon(const TMap<FString, FString>& In_Map);
 
 	UFUNCTION(BlueprintPure, meta = (DisplayName = "Beautify Json", ToolTip = "", Keywords = "string, fstring, beautify, json"), Category = "Frozen Forest|Extended Variables|JSON")
 	static EXTENDEDVARS_API FString Beautify_Json(FString In_Json);
