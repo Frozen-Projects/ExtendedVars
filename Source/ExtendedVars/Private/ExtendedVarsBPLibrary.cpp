@@ -627,8 +627,8 @@ TArray<uint8> UExtendedVarsBPLibrary::UTF8_To_Bytes_x86(FString In_UTF8)
         return Array_Bytes;
     }
 
-    FTCHARToUTF8 Source = FTCHARToUTF8(In_UTF8.GetCharArray().GetData());
-    Array_Bytes.Append((uint8*)Source.Get(), Source.Length());
+    TStringConversion<TStringConvert<FString::ElementType, UTF8CHAR>> StringConverter = StringCast<UTF8CHAR>(*In_UTF8);
+    Array_Bytes.Append((uint8*)StringConverter.Get(), StringConverter.Length());
 
     return Array_Bytes;
 }
@@ -729,10 +729,10 @@ bool UExtendedVarsBPLibrary::String_To_Hex(FString& Out_Hex, FString SourceStrin
         return false;
     }
 
-    FTCHARToUTF8 Source = FTCHARToUTF8(SourceString.GetCharArray().GetData());
-   
+    TStringConversion<TStringConvert<FString::ElementType, UTF8CHAR>> StringConverter = StringCast<UTF8CHAR>(*SourceString);
+
     TArray<uint8> Temp_Buffer;
-    Temp_Buffer.Append((uint8*)Source.Get(), Source.Length());
+    Temp_Buffer.Append((uint8*)StringConverter.Get(), StringConverter.Length());
     
     Out_Hex = bIsLower ? BytesToHexLower(Temp_Buffer.GetData(), Temp_Buffer.Num()) : BytesToHex(Temp_Buffer.GetData(), Temp_Buffer.Num());
 
@@ -746,8 +746,9 @@ bool UExtendedVarsBPLibrary::String_To_Base64(FString& Out_Base64, FString Sourc
         return false;
     }
 
+	TStringConversion<TStringConvert<FString::ElementType, UTF8CHAR>> Source = StringCast<UTF8CHAR>(*SourceString);
+
     TArray<uint8> Temp_Buffer;
-    FTCHARToUTF8 Source = FTCHARToUTF8(SourceString.GetCharArray().GetData());
     Temp_Buffer.Append((uint8*)Source.Get(), Source.Length());
 
     Out_Base64 = FBase64::Encode(Temp_Buffer, bUseUrl ? EBase64Mode::UrlSafe : EBase64Mode::Standard);
