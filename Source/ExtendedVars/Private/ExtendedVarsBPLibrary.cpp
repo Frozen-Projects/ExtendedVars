@@ -402,18 +402,8 @@ bool UExtendedVarsBPLibrary::Read_File_From_Path_32(TArray<uint8>& Out_Bytes, FS
 
     else
     {
-        FFileHelper::LoadFileToArray(ByteArray, *Path, FILEREAD_AllowWrite);
-
-        if (ByteArray.IsEmpty())
-        {
-            return false;
-        }
-
-        else
-        {
-            Out_Bytes = ByteArray;
-            return true;
-        }
+        FFileHelper::LoadFileToArray(Out_Bytes, *Path, FILEREAD_AllowWrite);
+        return !Out_Bytes.IsEmpty();
     }
 }
 
