@@ -177,8 +177,11 @@ class UExtendedVarsBPLibrary : public UBlueprintFunctionLibrary
 	UFUNCTION(BlueprintPure, meta = (DisplayName = "Beautify Json", ToolTip = "", Keywords = "string, fstring, beautify, json"), Category = "Frozen Forest|Extended Variables|JSON")
 	static EXTENDEDVARS_API FString Beautify_Json(FString In_Json);
 
-	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Json Object Array", Keywords = "string, fstring, json, object, array"), Category = "Frozen Forest|Extended Variables|JSON")
-	static EXTENDEDVARS_API FString JsonObjectArray(TArray<FJsonObjectWrapper> In_Objects);
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Print Json Object Array", Keywords = "string, fstring, json, object, array"), Category = "Frozen Forest|Extended Variables|JSON")
+	static EXTENDEDVARS_API FString PrintJsonObjectArray(TArray<FJsonObjectWrapper> In_Objects);
+
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Get Element From Json Object Array", Keywords = "string, fstring, json, object, array"), Category = "Frozen Forest|Extended Variables|JSON")
+	static EXTENDEDVARS_API FJsonObjectWrapper GetElementFromArray(TArray<FJsonObjectWrapper> In_Objects, int32 Index);
 
 #pragma endregion JSON_Group
 

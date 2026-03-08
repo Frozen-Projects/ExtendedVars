@@ -861,7 +861,7 @@ FString UExtendedVarsBPLibrary::Beautify_Json(FString In_Json)
     return FJsonSerializer::Serialize(JsonObject.ToSharedRef(), Writer) ? BeautifiedJson : FString();
 }
 
-FString UExtendedVarsBPLibrary::JsonObjectArray(TArray<FJsonObjectWrapper> In_Objects)
+FString UExtendedVarsBPLibrary::PrintJsonObjectArray(TArray<FJsonObjectWrapper> In_Objects)
 {
     TArray<TSharedPtr<FJsonValue>> JsonArray;
 
@@ -874,7 +874,17 @@ FString UExtendedVarsBPLibrary::JsonObjectArray(TArray<FJsonObjectWrapper> In_Ob
     TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&OutputString);
     FJsonSerializer::Serialize(JsonArray, Writer);
 
-	return OutputString;
+    return OutputString;
+}
+
+FJsonObjectWrapper UExtendedVarsBPLibrary::GetElementFromArray(TArray<FJsonObjectWrapper> In_Objects, int32 Index)
+{
+    if (In_Objects.IsValidIndex(Index))
+    {
+        return In_Objects[Index];
+    }
+
+    return FJsonObjectWrapper();
 }
 
 #pragma endregion JSON_Group
