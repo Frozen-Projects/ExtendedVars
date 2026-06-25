@@ -294,6 +294,12 @@ class UExtendedVarsBPLibrary : public UBlueprintFunctionLibrary
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Disable Splash Screen (Windows)", Keywords = "disable, splash, screen"), Category = "Frozen Forest|Extended Variables|Windows|System")
 	static EXTENDEDVARS_API void SplashScreenVisibility(bool HideSplashScreen);
 
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Set Clipboard", Keywords = "set, copy, clipboard"), Category = "Frozen Forest|Extended Variables|Windows|Clipboard")
+	static EXTENDEDVARS_API bool SetClipboard(const FString& Input);
+
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Get Clipboard", Keywords = "get, paste, clipboard"), Category = "Frozen Forest|Extended Variables|Windows|Clipboard")
+	static EXTENDEDVARS_API FString GetClipboard();
+
 #pragma endregion System
 
 #pragma region Profiling

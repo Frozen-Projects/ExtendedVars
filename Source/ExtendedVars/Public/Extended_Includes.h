@@ -43,6 +43,18 @@
 #include "Misc/SecureHash.h"                        // DeviceID MD5 Hash creation.
 #include "Misc/DateTime.h"
 
+#ifdef _WIN64
+#include "Windows/WindowsPlatformApplicationMisc.h"
+#elif __ANDROID__
+#include "Android/AndroidPlatformApplicationMisc.h"
+#elif PLATFORM_LINUX
+#include "Linux/LinuxPlatformApplicationMisc.h"
+#elif PLATFORM_MAC
+#include "Mac/MacPlatformApplicationMisc.h"
+#elif PLATFORM_IOS
+#include "IOS/IOSPlatformApplicationMisc.h"
+#endif
+
 THIRD_PARTY_INCLUDES_START
 #include <iomanip>
 #include <sstream>

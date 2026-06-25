@@ -2111,6 +2111,50 @@ void UExtendedVarsBPLibrary::SplashScreenVisibility(bool HideSplashScreen)
 #endif
 }
 
+bool UExtendedVarsBPLibrary::SetClipboard(const FString& Input)
+{
+    if (Input.IsEmpty())
+    {
+        return false;
+    }
+
+#ifdef _WIN64
+    FWindowsPlatformApplicationMisc::ClipboardCopy(*Input);
+#elif __ANDROID__
+    FAndroidApplicationMisc::ClipboardCopy(*Input);
+#elif PLATFORM_LINUX
+    FLinuxPlatformApplicationMisc::ClipboardCopy(*Input);
+#elif PLATFORM_MAC
+    FMacPlatformApplicationMisc::ClipboardCopy(*Input);
+#elif PLATFORM_IOS
+    FIOSPlatformApplicationMisc::ClipboardCopy(*Input);
+#else
+    return false;
+#endif
+    return true;
+}
+
+FString UExtendedVarsBPLibrary::GetClipboard()
+{
+	FString ClipboardContent;
+
+#ifdef _WIN64
+    FWindowsPlatformApplicationMisc::ClipboardPaste(ClipboardContent);
+#elif __ANDROID__
+    FAndroidApplicationMisc::ClipboardPaste(ClipboardContent);
+#elif PLATFORM_LINUX
+    FLinuxPlatformApplicationMisc::ClipboardPaste(ClipboardContent);
+#elif PLATFORM_MAC
+    FMacPlatformApplicationMisc::ClipboardPaste(ClipboardContent);
+#elif PLATFORM_IOS
+    FIOSPlatformApplicationMisc::ClipboardPaste(ClipboardContent);
+#else
+    return false;
+#endif
+
+	return ClipboardContent.IsEmpty() ? FString() : ClipboardContent;
+}
+
 #pragma endregion System
 
 #pragma region Profiling
