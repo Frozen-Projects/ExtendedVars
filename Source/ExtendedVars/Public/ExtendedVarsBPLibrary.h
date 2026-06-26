@@ -288,7 +288,7 @@ class UExtendedVarsBPLibrary : public UBlueprintFunctionLibrary
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Get Monitor Names (Windows)", Keywords = "get, monitor, names"), Category = "Frozen Forest|Extended Variables|Windows|Hardware")
 	static EXTENDEDVARS_API void GetMonitorNames(FDelegateMonitorNames DelegateMonitorNames);
 
-	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Get Monitor Infos", Keywords = "get, monitor, infos"), Category = "Frozen Forest|Extended Variables|Windows|Hardware")
+	UFUNCTION(BlueprintPure, meta = (DisplayName = "Get Monitor Infos", Keywords = "get, monitor, infos"), Category = "Frozen Forest|Extended Variables|Windows|Hardware")
 	static EXTENDEDVARS_API void GetMonitorInfos(FJsonObjectWrapper& OutMonitorInfos);
 
 	UFUNCTION(BlueprintPure, meta = (DisplayName = "Get Desktop Resolution", Keywords = "get, desktop, resolution"), Category = "Frozen Forest|Extended Variables|Windows|Hardware")
@@ -297,23 +297,23 @@ class UExtendedVarsBPLibrary : public UBlueprintFunctionLibrary
 	UFUNCTION(BlueprintPure, meta = (DisplayName = "Get CPU", Keywords = "get, cpu"), Category = "Frozen Forest|Extended Variables|Windows|Hardware")
 	static EXTENDEDVARS_API void GetCPU(FString& CPUBrand, int32& CoreCount, int32& ThreadCount);
 
-	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Get App Performance Metrics", ToolTip = "Description.", Keywords = "get, app, performance, metrics, time, cpu, gpu, render, game"), Category = "Frozen Forest|Extended Variables|Windows|Hardware")
+	UFUNCTION(BlueprintPure, meta = (DisplayName = "Get App Performance Metrics", ToolTip = "Description.", Keywords = "get, app, performance, metrics, time, cpu, gpu, render, game"), Category = "Frozen Forest|Extended Variables|Windows|Hardware")
 	static EXTENDEDVARS_API void GetAppPerformanceMetrics(int32& OutFPS, float& OutRenderThreadTime, float& OutGameThreadTime, float& OutGPUTime);
+
+	UFUNCTION(BlueprintPure, meta = (DisplayName = "Get CPU From PowerShell", Keywords = "powershell, helper, get, cpu"), Category = "Frozen Forest|Extended Variables|Windows|Hardware")
+	static EXTENDEDVARS_API void GetCpuFromPowershell(FString&Out_Path, FString& Out_Params);
+
+	UFUNCTION(BlueprintPure, meta = (DisplayName = "Get GPU From PowerShell", Keywords = "powershell, helper, get, gpu"), Category = "Frozen Forest|Extended Variables|Windows|Hardware")
+	static EXTENDEDVARS_API void GetGpuFromPowershell(FString& Out_Path, FString& Out_Params);
+
+	UFUNCTION(BlueprintPure, meta = (DisplayName = "Get Network From PowerShell", Keywords = "powershell, helper, get, network"), Category = "Frozen Forest|Extended Variables|Windows|Hardware")
+	static EXTENDEDVARS_API void GetNetworkFromPowershell(FString& Out_Path, FString& Out_Params);
 
 	UFUNCTION(BlueprintPure, meta = (DisplayName = "Get Network Infos", Keywords = "get, device, name, local, ip, host, network"), Category = "Frozen Forest|Extended Variables|Windows|Hardware")
 	static EXTENDEDVARS_API void GetNetworkInfos(TArray<FString>& Out_Adapters, FString& OutHostname, FString& OutHostAddr, FString& OutMac);
 
-	UFUNCTION(BlueprintPure, meta = (DisplayName = "Helper IPConfig (Windows)", Keywords = "cmd, helper, ip, ipconfig"), Category = "Frozen Forest|Extended Variables|Windows|Hardware")
-	static EXTENDEDVARS_API bool HelperIPConfig(FString& Out_Path, FString& Out_Params, bool Get_MAC_Address);
-
 	UFUNCTION(BlueprintPure, meta = (DisplayName = "Helper IP Ping (Windows)", Keywords = "cmd, helper, ip, ping"), Category = "Frozen Forest|Extended Variables|Windows|Hardware")
-	static EXTENDEDVARS_API bool HelperPing(FString& Out_Path, FString& Out_Params, int32 PingCount, const FString IPAdress);
-
-	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Get CPU From PowerShell", Keywords = "powershell, helper, cpu"), Category = "Frozen Forest|Extended Variables|Windows|Hardware")
-	static EXTENDEDVARS_API void GetCpuFromPowershell(FString&Out_Path, FString& Out_Params);
-
-	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Get GPU From PowerShell", Keywords = "powershell, helper, gpu"), Category = "Frozen Forest|Extended Variables|Windows|Hardware")
-	static EXTENDEDVARS_API void GetGpuFromPowershell(FString& Out_Path, FString& Out_Params);
+	static EXTENDEDVARS_API void HelperPing(FString& Out_Path, FString& Out_Params, int32 PingCount, const FString IPAdress);
 
 #pragma endregion Profiling
 
@@ -327,4 +327,5 @@ class UExtendedVarsBPLibrary : public UBlueprintFunctionLibrary
 	UFUNCTION(BlueprintPure, meta = (DisplayName = "Windows Terminal Helper", ToolTip = "Helper function to optimize commands for Windows Terminal.", Keywords = "windows, terminal, helper, external, app, execute"), Category = "Frozen Forest|Extended Variables|External Apps")
 	static EXTENDEDVARS_API void WindowsTerminalHelper(FString& Out_Path, FString& Out_Params, const FString& In_Params, bool bIsPowerShell = false);
 
+#pragma endregion External_Apps
 };

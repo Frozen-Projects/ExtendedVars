@@ -2362,6 +2362,41 @@ void UExtendedVarsBPLibrary::GetAppPerformanceMetrics(int32& OutFPS, float& OutR
     OutGPUTime = FGenericPlatformTime::ToMilliseconds(RHIGetGPUFrameCycles());
 }
 
+void UExtendedVarsBPLibrary::GetCpuFromPowershell(FString& Out_Path, FString& Out_Params)
+{
+#ifdef _WIN64
+    Out_Path = TEXT("powershell.exe");
+    Out_Params = TEXT("-Command Get-CimInstance Win32_Processor | Select-Object Caption,DeviceID,Name,NumberOfCores,MaxClockSpeed,Status | ConvertTo-Json");
+#else
+    Out_Path = TEXT("");
+    Out_Params = TEXT("");
+#endif
+}
+
+void UExtendedVarsBPLibrary::GetGpuFromPowershell(FString& Out_Path, FString& Out_Params)
+{
+#ifdef _WIN64
+    Out_Path = TEXT("powershell.exe");
+    Out_Params = TEXT("-Command Get-CimInstance Win32_VideoController | Select-Object Name,VideoProcessor,AdapterCompatibility,PNPDeviceID,DriverVersion,DriverDate,VideoModeDescription,CurrentHorizontalResolution,CurrentVerticalResolution,CurrentRefreshRate,AdapterRAM,Status | ConvertTo-Json");
+#else
+    Out_Path = TEXT("");
+    Out_Params = TEXT("");
+#endif
+}
+
+void UExtendedVarsBPLibrary::GetNetworkFromPowershell(FString& Out_Path, FString& Out_Params)
+{
+#ifdef _WIN64
+    Out_Path = TEXT("powershell.exe");
+
+    const FString Command = TEXT("$Adapters = @(Get-CimInstance Win32_NetworkAdapterConfiguration | Select-Object Description, MACAddress, DHCPEnabled, DHCPServer, DNSHostName, DNSDomain, DNSDomainSuffixSearchOrder, DNSServerSearchOrder, IPAddress, IPSubnet, DefaultIPGateway, InterfaceIndex); [PSCustomObject]@{ NetworkAdapters = $Adapters } | ConvertTo-Json -Depth 8");
+	Out_Params = FString::Printf(TEXT("-Command \"%s\""), *Command);
+#else
+    Out_Path = TEXT("");
+    Out_Params = TEXT("");
+#endif
+}
+
 void UExtendedVarsBPLibrary::GetNetworkInfos(TArray<FString>& Out_Adapters, FString& OutHostname, FString& OutHostAddr, FString& OutMac)
 {
     /*
@@ -2442,63 +2477,18 @@ void UExtendedVarsBPLibrary::GetNetworkInfos(TArray<FString>& Out_Adapters, FStr
 #endif
 }
 
-bool UExtendedVarsBPLibrary::HelperIPConfig(FString& Out_Path, FString& Out_Params, bool Get_MAC_Address)
-{
-#ifdef _WIN64
-    
-    if (Get_MAC_Address == true)
-    {
-        Out_Path = TEXT("cmd.exe");
-        Out_Params = TEXT("/c ipconfig /all | findstr /i \"Adapter Description IPv4 Physical\"");
-        return true;
-    }
-
-    else
-    {
-        Out_Path = TEXT("cmd.exe");
-        Out_Params = TEXT("/c ipconfig /all | findstr /i \"Adapter Description IPv4\"");
-        return true;
-    }
-
-#else
-    return false;
-#endif
-}
-
-bool UExtendedVarsBPLibrary::HelperPing(FString& Out_Path, FString& Out_Params, int32 PingCount, const FString IPAdress)
+void UExtendedVarsBPLibrary::HelperPing(FString& Out_Path, FString& Out_Params, int32 PingCount, const FString IPAdress)
 {
 #ifdef _WIN64
 	Out_Path = TEXT("cmd.exe");
     Out_Params = TEXT("/c ping -n ") + FString::FromInt(PingCount) + TEXT(" ") + IPAdress + TEXT(" | findstr /i \"Reply\"");
-    return true;
 #else
-    return false;
-#endif
-}
-
-void UExtendedVarsBPLibrary::GetCpuFromPowershell(FString& Out_Path, FString& Out_Params)
-{
-#ifdef _WIN64
-	Out_Path = TEXT("powershell.exe");
-    Out_Params = TEXT("-Command Get-CimInstance Win32_Processor | Select-Object Caption,DeviceID,Name,NumberOfCores,MaxClockSpeed,Status | ConvertTo-Json");
-#else
-	Out_Path = TEXT("");
-    Out_Params = TEXT("");
-#endif
-}
-
-void UExtendedVarsBPLibrary::GetGpuFromPowershell(FString& Out_Path, FString& Out_Params)
-{
-#ifdef _WIN64
-    Out_Path = TEXT("powershell.exe");
-    Out_Params = TEXT("-Command Get-CimInstance Win32_VideoController | Select-Object Name,VideoProcessor,AdapterCompatibility,PNPDeviceID,DriverVersion,DriverDate,VideoModeDescription,CurrentHorizontalResolution,CurrentVerticalResolution,CurrentRefreshRate,AdapterRAM,Status | ConvertTo-Json");
-#else
-    Out_Path = TEXT("");
-    Out_Params = TEXT("");
 #endif
 }
 
 #pragma endregion Profiling
+
+#pragma region External_Apps
 
 bool UExtendedVarsBPLibrary::RunExternalApp_Internal(FJsonObjectWrapper& Out_Code, FString AppPath, const FString& Parameters, bool bIsAdmin, bool bSupportPipes)
 {
@@ -2513,7 +2503,6 @@ bool UExtendedVarsBPLibrary::RunExternalApp_Internal(FJsonObjectWrapper& Out_Cod
         return false;
     }
 
-    const FString Temp_Path = FString::Printf(TEXT("\"%s\""), *AppPath);
     FString Result, ErrorString;
     int32 ProcessId = 0;
 	bool bIsSuccessful = false;
@@ -2529,7 +2518,7 @@ bool UExtendedVarsBPLibrary::RunExternalApp_Internal(FJsonObjectWrapper& Out_Cod
             return false;
         }
 
-		FProcHandle Process = FPlatformProcess::CreateProc(*Temp_Path, *Parameters, false, true, true, (uint32_t*)&ProcessId, 0, nullptr, PipeWrite, PipeRead);
+		FProcHandle Process = FPlatformProcess::CreateProc(*AppPath, *Parameters, false, true, true, (uint32_t*)&ProcessId, 0, nullptr, PipeWrite, PipeRead);
 
         if (!Process.IsValid())
         {
@@ -2551,6 +2540,7 @@ bool UExtendedVarsBPLibrary::RunExternalApp_Internal(FJsonObjectWrapper& Out_Cod
 
     else
     {
+        const FString Temp_Path = FString::Printf(TEXT("\"%s\""), *AppPath);
         bIsSuccessful = bIsAdmin ? FPlatformProcess::ExecElevatedProcess(*Temp_Path, *Parameters, &ProcessId) : FPlatformProcess::ExecProcess(*Temp_Path, *Parameters, &ProcessId, &Result, &ErrorString);
     }
 
@@ -2583,7 +2573,7 @@ bool UExtendedVarsBPLibrary::RunExternalApp_Internal(FJsonObjectWrapper& Out_Cod
 
 void UExtendedVarsBPLibrary::WindowsTerminalHelper(FString& Out_Path, FString& Out_Params, const FString& In_Params, bool bIsPowerShell)
 {
-	Out_Path = bIsPowerShell ? TEXT("powershell.exe") : TEXT("cmd.exe");
+	Out_Path = bIsPowerShell ? TEXT("C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe") : TEXT("C:\\Windows\\System32\\cmd.exe");
 	Out_Params = bIsPowerShell ? FString::Printf(TEXT("-Command %s"), *In_Params) : FString::Printf(TEXT("/c %s"), *In_Params);
 }
 
@@ -2602,3 +2592,5 @@ void UExtendedVarsBPLibrary::RunExternalApp(FDelegatePipeResult DelegatePipeResu
 		}
 	);
 }
+
+#pragma endregion External_Apps
