@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Extended_Enums.generated.h"
 
 UENUM(BlueprintType)
 enum class EStringToDate : uint8
@@ -55,22 +56,11 @@ enum class ERegeditRoot : uint8
 ENUM_CLASS_FLAGS(ERegeditRoot)
 
 UENUM(BlueprintType)
-enum class ETerminalTarget : uint8
-{
-	CMD			UMETA(DisplayName = "CMD"),
-	Powershell	UMETA(DisplayName = "Powershell"),
-};
-ENUM_CLASS_FLAGS(ETerminalTarget)
-
-UENUM(BlueprintType)
 enum class ETerminalVisibility : uint8
 {
-	CMD_Hide			UMETA(DisplayName = "CMD_Hide"),
-	CMD_ShowKillAfter	UMETA(DisplayName = "CMD_ShowKillAfter"),
-	CMD_ShowLetItLive	UMETA(DisplayName = "CMD_ShowLetItLive"),
-	PS_Hide				UMETA(DisplayName = "PS_Hide"),
-	PS_ShowKillAfter	UMETA(DisplayName = "PS_ShowKillAfter"),
-	PS_ShowLetItLive	UMETA(DisplayName = "PS_ShowLetItLive"),
+	Hide			UMETA(DisplayName = "Hide"),
+	ShowKillAfter	UMETA(DisplayName = "ShowKillAfter"),
+	ShowLetItLive	UMETA(DisplayName = "ShowLetItLive"),
 };
 ENUM_CLASS_FLAGS(ETerminalVisibility)
 

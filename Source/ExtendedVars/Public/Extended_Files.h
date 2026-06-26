@@ -1,5 +1,6 @@
 #pragma once
 
+#include "CoreMinimal.h"
 #include "Extended_Files.generated.h"
 
 class FFindDirectories : public IPlatformFile::FDirectoryVisitor

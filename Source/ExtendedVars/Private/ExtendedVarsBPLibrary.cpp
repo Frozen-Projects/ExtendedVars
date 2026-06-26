@@ -828,7 +828,28 @@ FString UExtendedVarsBPLibrary::Merge_Map_To_String(const TMap<FString, FString>
 
 #pragma region JSON_Group
 
-FJsonObjectWrapper UExtendedVarsBPLibrary::Merge_Map_To_JSon(const TMap<FString, FString>& In_Map)
+bool UExtendedVarsBPLibrary::StringToJsonObjectArray(TArray<TSharedPtr<FJsonValue>>& OutArray, const FString& InJsonArrayString)
+{
+    OutArray.Empty();
+
+    const FString JsonText = InJsonArrayString.TrimStartAndEnd();
+
+    if (!JsonText.StartsWith(TEXT("[")) || !JsonText.EndsWith(TEXT("]")))
+    {
+        return false;
+    }
+
+    const TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(JsonText);
+
+    if (!FJsonSerializer::Deserialize(Reader, OutArray))
+    {
+        return false;
+    }
+
+    return true;
+}
+
+FJsonObjectWrapper UExtendedVarsBPLibrary::MapToJson(const TMap<FString, FString>& In_Map)
 {
 	FJsonObjectWrapper ResultJson;
 
@@ -845,7 +866,7 @@ FJsonObjectWrapper UExtendedVarsBPLibrary::Merge_Map_To_JSon(const TMap<FString,
 	return ResultJson;
 }
 
-FString UExtendedVarsBPLibrary::Beautify_Json(FString In_Json)
+FString UExtendedVarsBPLibrary::BeautifyJson(FString In_Json)
 {
     TSharedPtr<FJsonObject> JsonObject = MakeShareable(new FJsonObject());
     TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(In_Json);
@@ -879,12 +900,7 @@ FString UExtendedVarsBPLibrary::PrintJsonObjectArray(TArray<FJsonObjectWrapper> 
 
 FJsonObjectWrapper UExtendedVarsBPLibrary::GetElementFromArray(TArray<FJsonObjectWrapper> In_Objects, int32 Index)
 {
-    if (In_Objects.IsValidIndex(Index))
-    {
-        return In_Objects[Index];
-    }
-
-    return FJsonObjectWrapper();
+	return In_Objects.IsValidIndex(Index) ? In_Objects[Index] : FJsonObjectWrapper();
 }
 
 #pragma endregion JSON_Group
@@ -2267,7 +2283,7 @@ void UExtendedVarsBPLibrary::GetMonitorNames(FDelegateMonitorNames DelegateMonit
 #endif
 }
 
-void UExtendedVarsBPLibrary::GetMonitorInfos(TArray<FMonitorInfos>& OutMonitorInfos)
+void UExtendedVarsBPLibrary::GetMonitorInfos(FJsonObjectWrapper& OutMonitorInfos)
 {
 #ifdef _WIN64
 
@@ -2275,7 +2291,7 @@ void UExtendedVarsBPLibrary::GetMonitorInfos(TArray<FMonitorInfos>& OutMonitorIn
     AdapterDevices.cb = sizeof(AdapterDevices);
     int32 AdapterIndex = 0;
 
-    TArray<FMonitorInfos> TempInfos;
+    TArray<TSharedPtr<FJsonValue>> Details;
 
     while (EnumDisplayDevicesW(NULL, AdapterIndex, &AdapterDevices, EDD_GET_DEVICE_INTERFACE_NAME))
     {
@@ -2287,21 +2303,20 @@ void UExtendedVarsBPLibrary::GetMonitorInfos(TArray<FMonitorInfos>& OutMonitorIn
 
         while (EnumDisplayDevicesW(AdapterName.c_str(), MonitorIndex, &MonitorDevices, 0))
         {
-            FMonitorInfos EachMonitor;
-            EachMonitor.MonitorID = MonitorDevices.DeviceID;
-            EachMonitor.MonitorKey = MonitorDevices.DeviceKey;
-            EachMonitor.MonitorName = MonitorDevices.DeviceName;
-            EachMonitor.MonitorString = MonitorDevices.DeviceString;
+			FJsonObjectWrapper EachMonitor;
+			EachMonitor.JsonObject->SetStringField(TEXT("MonitorID"), AdapterDevices.DeviceName);
+            EachMonitor.JsonObject->SetStringField(TEXT("MonitorKey"), MonitorDevices.DeviceKey);
+            EachMonitor.JsonObject->SetStringField(TEXT("MonitorName"), MonitorDevices.DeviceName);
+            EachMonitor.JsonObject->SetStringField(TEXT("MonitorString"), MonitorDevices.DeviceString);
 
-            TempInfos.Add(EachMonitor);
-
+			Details.Add(MakeShareable(new FJsonValueObject(EachMonitor.JsonObject)));
             MonitorIndex++;
         }
 
         AdapterIndex++;
     }
 
-    OutMonitorInfos = TempInfos;
+    OutMonitorInfos.JsonObject->SetArrayField(TEXT("Details"), Details);
 
 #else
     return;
@@ -2329,23 +2344,11 @@ void UExtendedVarsBPLibrary::GetDesktopResolution(int32 MonitorIndex, FVector2D&
     MonitorDPI = Monitor.DPI;
 }
 
-bool UExtendedVarsBPLibrary::GetCPU(FString& OutCpu)
+void UExtendedVarsBPLibrary::GetCPU(FString& CPUBrand, int32& CoreCount, int32& ThreadCount)
 {
-
-#ifdef _WIN64
-
-    FString CPUBrand = FWindowsPlatformMisc::GetCPUBrand();
-    int CoreCount = FWindowsPlatformMisc::NumberOfCores();
-    int32 ThreadCount = FWindowsPlatformMisc::NumberOfCoresIncludingHyperthreads();
-
-    OutCpu = CPUBrand + TEXT("\n") + FString::FromInt(CoreCount) + TEXT("\n") + FString::FromInt(ThreadCount);
-    return true;
-
-#else
-
-    return false;
-
-#endif
+    CPUBrand = FPlatformMisc::GetCPUBrand();
+    CoreCount = FPlatformMisc::NumberOfCores();
+    ThreadCount = FPlatformMisc::NumberOfCoresIncludingHyperthreads();
 }
 
 void UExtendedVarsBPLibrary::GetAppPerformanceMetrics(int32& OutFPS, float& OutRenderThreadTime, float& OutGameThreadTime, float& OutGPUTime)
@@ -2439,399 +2442,163 @@ void UExtendedVarsBPLibrary::GetNetworkInfos(TArray<FString>& Out_Adapters, FStr
 #endif
 }
 
-bool UExtendedVarsBPLibrary::HelperIPConfig(FString& OutCli, bool Get_MAC_Address)
+bool UExtendedVarsBPLibrary::HelperIPConfig(FString& Out_Path, FString& Out_Params, bool Get_MAC_Address)
 {
-
 #ifdef _WIN64
+    
     if (Get_MAC_Address == true)
     {
-        OutCli = TEXT("ipconfig /all | findstr /i \"Adapter Description IPv4 Physical\"");
+        Out_Path = TEXT("cmd.exe");
+        Out_Params = TEXT("/c ipconfig /all | findstr /i \"Adapter Description IPv4 Physical\"");
         return true;
     }
 
     else
     {
-        OutCli = TEXT("ipconfig /all | findstr /i \"Adapter Description IPv4\"");
+        Out_Path = TEXT("cmd.exe");
+        Out_Params = TEXT("/c ipconfig /all | findstr /i \"Adapter Description IPv4\"");
         return true;
     }
 
 #else
-
     return false;
-
 #endif
 }
 
-bool UExtendedVarsBPLibrary::HelperPing(FString& OutCli, int32 PingCount, const FString IPAdress)
+bool UExtendedVarsBPLibrary::HelperPing(FString& Out_Path, FString& Out_Params, int32 PingCount, const FString IPAdress)
 {
 #ifdef _WIN64
-
-    OutCli = TEXT("ping -n ") + FString::FromInt(PingCount) + TEXT(" ") + IPAdress + TEXT(" | findstr /i \"Reply\"");
+	Out_Path = TEXT("cmd.exe");
+    Out_Params = TEXT("/c ping -n ") + FString::FromInt(PingCount) + TEXT(" ") + IPAdress + TEXT(" | findstr /i \"Reply\"");
     return true;
-
 #else
-
     return false;
-
 #endif
 }
 
-bool UExtendedVarsBPLibrary::HelperGetCPUFromCMD(FString& OutCli)
+void UExtendedVarsBPLibrary::GetCpuFromPowershell(FString& Out_Path, FString& Out_Params)
 {
 #ifdef _WIN64
-
-    OutCli = TEXT("wmic cpu get caption, deviceid, name, numberofcores, maxclockspeed, status");
-    return true;
-
+	Out_Path = TEXT("powershell.exe");
+    Out_Params = TEXT("-Command Get-CimInstance Win32_Processor | Select-Object Caption,DeviceID,Name,NumberOfCores,MaxClockSpeed,Status | ConvertTo-Json");
 #else
-
-    return false;
-
+	Out_Path = TEXT("");
+    Out_Params = TEXT("");
 #endif
 }
 
-bool UExtendedVarsBPLibrary::HelperGetGPUFromCMD(FString& OutCli)
+void UExtendedVarsBPLibrary::GetGpuFromPowershell(FString& Out_Path, FString& Out_Params)
 {
 #ifdef _WIN64
-
-    OutCli = "wmic path win32_VideoController get name, videoarchitecture, deviceID, adapterram, description";
-    return true;
-
+    Out_Path = TEXT("powershell.exe");
+    Out_Params = TEXT("-Command Get-CimInstance Win32_VideoController | Select-Object Name,VideoProcessor,AdapterCompatibility,PNPDeviceID,DriverVersion,DriverDate,VideoModeDescription,CurrentHorizontalResolution,CurrentVerticalResolution,CurrentRefreshRate,AdapterRAM,Status | ConvertTo-Json");
 #else
-
-    return false;
-
+    Out_Path = TEXT("");
+    Out_Params = TEXT("");
 #endif
 }
 
 #pragma endregion Profiling
 
-#pragma region External_Apps
-
-bool UExtendedVarsBPLibrary::RunExternalApp(const FString AppPath, const FString Parameters, int32& OutProcessID, FString& StdOut, FString& StdErr)
+bool UExtendedVarsBPLibrary::RunExternalApp_Internal(FJsonObjectWrapper& Out_Code, FString AppPath, const FString& Parameters, bool bIsAdmin, bool bSupportPipes)
 {
-#ifdef _WIN64
+    Out_Code.JsonObject->SetStringField(TEXT("PluginName"), TEXT("Extended Variables"));
+    Out_Code.JsonObject->SetStringField(TEXT("FunctionName"), TEXT(__FUNCTION__));
 
-    bool Success = FWindowsPlatformProcess::ExecProcess(*AppPath, *Parameters, &OutProcessID, &StdOut, &StdErr);
-    return Success;
+	FPaths::NormalizeFilename(AppPath);
 
-#else
-
-    return false;
-
-#endif
-}
-
-bool UExtendedVarsBPLibrary::RunExternalAppAdmin(const FString AppPath, const FString Parameters, int32& OutProcessID)
-{
-
-#ifdef _WIN64
-
-    bool Success = FWindowsPlatformProcess::ExecElevatedProcess(*AppPath, *Parameters, &OutProcessID);
-    return Success;
-
-#else 
-
-    return false;
-
-#endif
-}
-
-bool UExtendedVarsBPLibrary::RunExternalAppAsync(const FString AppPath, const FString Parameters, FString OptionalWorkingDirectory, bool Detached, bool Hidden, bool ReallyHidden, int32 Priority, int32& OutProcessID)
-{
-#ifdef _WIN64
-
-    // Create Process
-    FProcHandle RunAppAsync = FWindowsPlatformProcess::CreateProc(*AppPath, *Parameters, Detached, Hidden, ReallyHidden, (uint32_t*)&OutProcessID, Priority, OptionalWorkingDirectory.IsEmpty() ? NULL : *OptionalWorkingDirectory, nullptr, nullptr);
-
-    if (!RunAppAsync.IsValid())
+    if (AppPath.IsEmpty())
     {
+        Out_Code.JsonObject->SetStringField(TEXT("Error"), TEXT("AppPath is empty."));
         return false;
     }
 
-    return true;
+    const FString Temp_Path = FString::Printf(TEXT("\"%s\""), *AppPath);
+    FString Result, ErrorString;
+    int32 ProcessId = 0;
+	bool bIsSuccessful = false;
 
-#else
-
-    return false;
-
-#endif
-}
-
-bool UExtendedVarsBPLibrary::RunSubProcess(const FString SubProcessRelativePath, bool bIsDetached, bool bIsHidden, bool bIsReallyHidden, int32& OutProcessID, FString& SubProcessPathSave)
-{
-#ifdef _WIN64
-    const FString SubProcessPathCoocked = FPaths::ProjectContentDir() + SubProcessRelativePath;
-    SubProcessPathSave = FPaths::ProjectSavedDir() + SubProcessRelativePath;
-
-    if (FPaths::FileExists(SubProcessPathSave) == true)
+    if (bSupportPipes)
     {
-        FProcHandle SubProcess = FWindowsPlatformProcess::CreateProc(*SubProcessPathSave, NULL, bIsDetached, bIsHidden, bIsReallyHidden, (uint32_t*)&OutProcessID, 0, NULL, nullptr, nullptr);
-
-        if (SubProcess.IsValid() == true)
+        void* PipeRead;
+        void* PipeWrite;
+        
+        if (!FWindowsPlatformProcess::CreatePipe(PipeRead, PipeWrite))
         {
-            return true;
+			Out_Code.JsonObject->SetStringField(TEXT("Error"), TEXT("Pipe creation failed."));
+            return false;
         }
 
-        return false;
+		FProcHandle Process = FPlatformProcess::CreateProc(*Temp_Path, *Parameters, false, true, true, (uint32_t*)&ProcessId, 0, nullptr, PipeWrite, PipeRead);
+
+        if (!Process.IsValid())
+        {
+            FWindowsPlatformProcess::ClosePipe(PipeRead, PipeWrite);
+			
+            Out_Code.JsonObject->SetStringField(TEXT("Error"), TEXT("Process creation failed."));
+			return false;
+        }
+
+        while (FWindowsPlatformProcess::IsProcRunning(Process))
+        {
+            Result += FWindowsPlatformProcess::ReadPipe(PipeRead);
+        }
+
+		FWindowsPlatformProcess::ClosePipe(PipeRead, PipeWrite);
+        FWindowsPlatformProcess::CloseProc(Process);
+		bIsSuccessful = true;
     }
 
     else
     {
-        TArray<uint8> ServerContents;
-        FFileHelper::LoadFileToArray(ServerContents, *SubProcessPathCoocked);
-        FFileHelper::SaveArrayToFile(ServerContents, *SubProcessPathSave);
-
-        FProcHandle SubProcess = FWindowsPlatformProcess::CreateProc(*SubProcessPathSave, NULL, bIsDetached, bIsHidden, bIsReallyHidden, (uint32_t*)&OutProcessID, 0, NULL, nullptr, nullptr);
-
-        if (SubProcess.IsValid() == true)
-        {
-            return true;
-        }
-
-        else
-        {
-            return false;
-        }
+        bIsSuccessful = bIsAdmin ? FPlatformProcess::ExecElevatedProcess(*Temp_Path, *Parameters, &ProcessId) : FPlatformProcess::ExecProcess(*Temp_Path, *Parameters, &ProcessId, &Result, &ErrorString);
     }
 
-#else
+    Out_Code.JsonObject->SetStringField(TEXT("AppPath"), AppPath);
+    Out_Code.JsonObject->SetStringField(TEXT("Parameters"), Parameters);
+    Out_Code.JsonObject->SetStringField(TEXT("ProcessId"), FString::FromInt(ProcessId));
 
-    return false;
+    FJsonObjectWrapper ResultJson;
+    TArray<TSharedPtr<FJsonValue>> StdOutArray;
 
-#endif
-}
-
-bool UExtendedVarsBPLibrary::HelperTaskKillByPID(FString& OutCli, int32 ProcessID)
-{
-#ifdef _WIN64
-
-    OutCli = TEXT("taskkill /F /PID ") + FString::FromInt(ProcessID);
-    return true;
-
-#else
-
-    return false;
-
-#endif
-}
-
-#pragma endregion External_Apps
-
-#pragma region Terminal
-
-
-void UExtendedVarsBPLibrary::RunTerminalAsync(ETerminalTarget TerminalTarget, ETerminalVisibility TerminalVisibility, EPipeThreadPriority PipeThreadPriority, const FString Command, const FString OptionalWorkingDirectory, int32 Priority, int32& OutProcessID, FDelegatePipeResult DelegatePipeResult)
-{
-#ifdef _WIN64
-    // Target Terminal Options.
-    const TCHAR* URL;
-
-    switch (TerminalTarget)
+    if (ResultJson.JsonObjectFromString(Result))
     {
-        case ETerminalTarget::CMD:
-
-            URL = TEXT("C:\\Windows\\System32\\cmd.exe");
-            break;
-
-        case ETerminalTarget::Powershell:
-
-            URL = TEXT("C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe");
-            break;
-
-        default:
-
-            URL = TEXT("C:\\Windows\\System32\\cmd.exe");
-            break;
+        Out_Code.JsonObject->SetObjectField(TEXT("Result"), ResultJson.JsonObject);
     }
 
-    // Terminal Visibility Options.
-    bool Hidden = false;
-    bool ReallyHidden = false;
-    bool CloseAfter = true;
-    FString CommandString;
-
-    switch (TerminalVisibility)
+    else if (UExtendedVarsBPLibrary::StringToJsonObjectArray(StdOutArray, Result))
     {
-        case ETerminalVisibility::CMD_Hide:
-            CommandString = TEXT("/c ") + Command;
-            Hidden = true;
-            ReallyHidden = true;
-            CloseAfter = true;
-            break;
-
-        case ETerminalVisibility::CMD_ShowKillAfter:
-            CommandString = TEXT("/c ") + Command;
-            Hidden = false;
-            ReallyHidden = false;
-            CloseAfter = true;
-            break;
-
-        case ETerminalVisibility::CMD_ShowLetItLive:
-            CommandString = TEXT("/k ") + Command;
-            Hidden = false;
-            ReallyHidden = false;
-            CloseAfter = false;
-            break;
-
-        case ETerminalVisibility::PS_Hide:
-            CommandString = TEXT("-mta -command \"") + Command + TEXT("\"");
-            Hidden = true;
-            ReallyHidden = true;
-            CloseAfter = true;
-            break;
-
-        case ETerminalVisibility::PS_ShowKillAfter:
-            CommandString = TEXT("-mta -command \"") + Command + TEXT("\"");
-            Hidden = false;
-            ReallyHidden = false;
-            CloseAfter = true;
-            break;
-
-        case ETerminalVisibility::PS_ShowLetItLive:
-            CommandString = TEXT("-noexit -mta -command \"") + Command + TEXT("\"");
-            Hidden = false;
-            ReallyHidden = false;
-            CloseAfter = false;
-            break;
-
-        default:
-            CommandString = TEXT("/c ") + Command;
-            Hidden = true;
-            ReallyHidden = true;
-            CloseAfter = true;
-            break;
+        Out_Code.JsonObject->SetArrayField(TEXT("Result"), StdOutArray);
     }
 
-    // Thread Priority of Pipes.
-    auto PipeThread = ENamedThreads::AnyNormalThreadNormalTask; // We need to define a default value for getting required variable type.
-    
-    switch (PipeThreadPriority)
+    else
     {
-        case EPipeThreadPriority::HighThreadNormalTask:
-            PipeThread = ENamedThreads::AnyNormalThreadNormalTask;
-            break;
-
-        case EPipeThreadPriority::HighThreadHighTask:
-            PipeThread = ENamedThreads::AnyHiPriThreadHiPriTask;
-            break;
-
-        case EPipeThreadPriority::NormalThreadNormalTask:
-            PipeThread = ENamedThreads::AnyNormalThreadNormalTask;
-            break;
-
-        case EPipeThreadPriority::NormalThreadHighTask:
-            PipeThread = ENamedThreads::AnyNormalThreadHiPriTask;
-            break;
-
-        case EPipeThreadPriority::BackgroundNormal:
-            PipeThread = ENamedThreads::AnyBackgroundThreadNormalTask;
-            break;
-
-        case EPipeThreadPriority::BackgroundHigh:
-            PipeThread = ENamedThreads::AnyBackgroundHiPriTask;
-            break;
-
-        default:
-            PipeThread = ENamedThreads::AnyNormalThreadNormalTask;
-            break;
+        Out_Code.JsonObject->SetStringField(TEXT("Result"), Result);
     }
 
-    AsyncTask(PipeThread, [DelegatePipeResult, URL, CommandString, Hidden, ReallyHidden, CloseAfter, OutProcessID, Priority, OptionalWorkingDirectory]()
-        {
-            // Optional Working Directory should specifically send NULL value to CreateProc if there is no entry.
-            const TCHAR* OptWorkDir = nullptr;
-
-            if (!OptionalWorkingDirectory.IsEmpty())
-            {
-                OptWorkDir = (*OptionalWorkingDirectory);
-            }
-
-            // Create pipe for communication.
-            void* PipeRead;
-            void* PipeWrite;
-            FWindowsPlatformProcess::CreatePipe(PipeRead, PipeWrite);
-
-            // Create Process. Process handle construction can not be captured in lambda expression. So we need to create it in this task.
-            FProcHandle TerminalAsync = FWindowsPlatformProcess::CreateProc(URL, *CommandString, false, Hidden, ReallyHidden, (uint32_t*)&OutProcessID, Priority, OptWorkDir, PipeWrite, PipeRead);
-
-            if (TerminalAsync.IsValid())
-            {
-                FString TerminalResult;
-
-                while (FWindowsPlatformProcess::IsProcRunning(TerminalAsync))
-                {
-                    TerminalResult += FWindowsPlatformProcess::ReadPipe(PipeRead);
-                }
-
-                // Check terminal visibility options and if CloseAfter is true, close process executions.
-                if (CloseAfter == true)
-                {
-                    FWindowsPlatformProcess::ClosePipe(PipeRead, PipeWrite);
-                    FWindowsPlatformProcess::CloseProc(TerminalAsync);
-                }
-
-                delete(PipeRead);
-                delete(PipeWrite);
-
-                // This will give final result.
-                AsyncTask(ENamedThreads::GameThread, [DelegatePipeResult, TerminalResult]()
-                    {
-                        DelegatePipeResult.ExecuteIfBound(true, TerminalResult);
-                    }
-                );
-
-                return;
-            }
-
-            // If process is not valid, close pipe and process and return error values.
-            else
-            {
-                FWindowsPlatformProcess::ClosePipe(PipeRead, PipeWrite);
-                FWindowsPlatformProcess::CloseProc(TerminalAsync);
-
-                delete(PipeRead);
-                delete(PipeWrite);
-
-                AsyncTask(ENamedThreads::GameThread, [DelegatePipeResult]()
-                    {
-                        DelegatePipeResult.ExecuteIfBound(false, TEXT("Nothing Happened !"));
-                    }
-                );
-            }
-        }
-    );
-#endif
+	Out_Code.JsonObject->SetStringField(TEXT("Error"), ErrorString);
+	
+    return bIsSuccessful;
 }
 
-void UExtendedVarsBPLibrary::RunCMDAsync(const FString Command, FDelegatePipeResult DelegatePipeResult)
+void UExtendedVarsBPLibrary::WindowsTerminalHelper(FString& Out_Path, FString& Out_Params, const FString& In_Params, bool bIsPowerShell)
 {
-#ifdef _WIN64
-    AsyncTask(ENamedThreads::AnyNormalThreadNormalTask, [DelegatePipeResult, Command]()
-        {
-            // Initial variables.
-            std::array<char, 128> Buffer;
-            FString Result;
-
-            // Execute CMD command.
-            FILE* PipeCMD = _popen(TCHAR_TO_ANSI(*Command), "r");
-
-            // Get results while execution and write to result string.
-            while (fgets(Buffer.data(), Buffer.size(), PipeCMD) != nullptr)
-            {
-                Result += Buffer.data();
-            }
-
-            _pclose(PipeCMD);
-
-            AsyncTask(ENamedThreads::GameThread, [DelegatePipeResult, Result]()
-                {
-                    DelegatePipeResult.ExecuteIfBound(true, Result);
-                }
-            );
-        }
-    );
-#endif
+	Out_Path = bIsPowerShell ? TEXT("powershell.exe") : TEXT("cmd.exe");
+	Out_Params = bIsPowerShell ? FString::Printf(TEXT("-Command %s"), *In_Params) : FString::Printf(TEXT("/c %s"), *In_Params);
 }
 
-#pragma endregion Terminal
+void UExtendedVarsBPLibrary::RunExternalApp(FDelegatePipeResult DelegatePipeResult, FString AppPath, const FString& Parameters, bool bIsAdmin, bool bSupportPipes)
+{
+	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [DelegatePipeResult, AppPath, Parameters, bIsAdmin, bSupportPipes]()
+		{
+            FJsonObjectWrapper Out_Code;
+			const bool bIsSuccessful = UExtendedVarsBPLibrary::RunExternalApp_Internal(Out_Code, AppPath, Parameters, bIsAdmin, bSupportPipes);
+			
+            AsyncTask(ENamedThreads::GameThread, [DelegatePipeResult, Out_Code, bIsSuccessful]()
+				{
+					DelegatePipeResult.ExecuteIfBound(bIsSuccessful, Out_Code);
+				}
+			);
+		}
+	);
+}

@@ -5,38 +5,17 @@
 #include "Kismet/BlueprintFunctionLibrary.h"
 
 // Custom Includes.
-#include "Extended_Bytes.h"	// It carrys Extended_Includes.h
+
+// It carrys Extended_Includes.h
+#include "Extended_Bytes.h"	
 #include "Extended_Enums.h"
 #include "Extended_Fonts.h"
 #include "Extended_Files.h"
 
 #include "ExtendedVarsBPLibrary.generated.h"
 
-USTRUCT(BlueprintType)
-struct EXTENDEDVARS_API FMonitorInfos
-{
-	GENERATED_BODY()
-
-public:
-
-	UPROPERTY(BlueprintReadWrite)
-	FString MonitorID;
-
-	UPROPERTY(BlueprintReadWrite)
-	FString MonitorKey;
-
-	UPROPERTY(BlueprintReadWrite)
-	FString MonitorName;
-
-	UPROPERTY(BlueprintReadWrite)
-	FString MonitorString;
-
-	UPROPERTY(BlueprintReadWrite)
-	FString DebugString;
-};
-
 UDELEGATE(BlueprintAuthorityOnly)
-DECLARE_DYNAMIC_DELEGATE_TwoParams(FDelegatePipeResult, bool, bIsSuccessed, FString, Out_Result);
+DECLARE_DYNAMIC_DELEGATE_TwoParams(FDelegatePipeResult, bool, bIsSuccessed, FJsonObjectWrapper, Out_Result);
 
 UDELEGATE(BlueprintAuthorityOnly)
 DECLARE_DYNAMIC_DELEGATE_ThreeParams(FDelegateMonitorNames, bool, bIsSuccessed, FString, Out_Code, const TArray<FString>&, Out_Monitor_Names);
@@ -171,11 +150,13 @@ class UExtendedVarsBPLibrary : public UBlueprintFunctionLibrary
 
 #pragma region JSON_Group
 
+	static EXTENDEDVARS_API bool StringToJsonObjectArray(TArray<TSharedPtr<FJsonValue>>& OutArray, const FString& InJsonArrayString);
+
 	UFUNCTION(BlueprintPure, meta = (DisplayName = "Merge Map to Json", ToolTip = "", Keywords = "merge, tmap, map, to, json, convert"), Category = "Frozen Forest|Extended Variables|JSON")
-	static EXTENDEDVARS_API FJsonObjectWrapper Merge_Map_To_JSon(const TMap<FString, FString>& In_Map);
+	static EXTENDEDVARS_API FJsonObjectWrapper MapToJson(const TMap<FString, FString>& In_Map);
 
 	UFUNCTION(BlueprintPure, meta = (DisplayName = "Beautify Json", ToolTip = "", Keywords = "string, fstring, beautify, json"), Category = "Frozen Forest|Extended Variables|JSON")
-	static EXTENDEDVARS_API FString Beautify_Json(FString In_Json);
+	static EXTENDEDVARS_API FString BeautifyJson(FString In_Json);
 
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Print Json Object Array", Keywords = "string, fstring, json, object, array"), Category = "Frozen Forest|Extended Variables|JSON")
 	static EXTENDEDVARS_API FString PrintJsonObjectArray(TArray<FJsonObjectWrapper> In_Objects);
@@ -308,13 +289,13 @@ class UExtendedVarsBPLibrary : public UBlueprintFunctionLibrary
 	static EXTENDEDVARS_API void GetMonitorNames(FDelegateMonitorNames DelegateMonitorNames);
 
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Get Monitor Infos", Keywords = "get, monitor, infos"), Category = "Frozen Forest|Extended Variables|Windows|Hardware")
-	static EXTENDEDVARS_API void GetMonitorInfos(TArray<FMonitorInfos>& OutMonitorInfos);
+	static EXTENDEDVARS_API void GetMonitorInfos(FJsonObjectWrapper& OutMonitorInfos);
 
 	UFUNCTION(BlueprintPure, meta = (DisplayName = "Get Desktop Resolution", Keywords = "get, desktop, resolution"), Category = "Frozen Forest|Extended Variables|Windows|Hardware")
 	static EXTENDEDVARS_API void GetDesktopResolution(int32 MonitorIndex, FVector2D& PrimaryResolution, FVector2D& TotalResolution, FVector2D& MonitorStart, FVector2D& MonitorResolution, float& MonitorDPI);
 
-	UFUNCTION(BlueprintPure, meta = (DisplayName = "Get CPU (Windows)", Keywords = "helper, cpu"), Category = "Frozen Forest|Extended Variables|Windows|Hardware")
-	static EXTENDEDVARS_API bool GetCPU(FString& OutCpu);
+	UFUNCTION(BlueprintPure, meta = (DisplayName = "Get CPU", Keywords = "get, cpu"), Category = "Frozen Forest|Extended Variables|Windows|Hardware")
+	static EXTENDEDVARS_API void GetCPU(FString& CPUBrand, int32& CoreCount, int32& ThreadCount);
 
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Get App Performance Metrics", ToolTip = "Description.", Keywords = "get, app, performance, metrics, time, cpu, gpu, render, game"), Category = "Frozen Forest|Extended Variables|Windows|Hardware")
 	static EXTENDEDVARS_API void GetAppPerformanceMetrics(int32& OutFPS, float& OutRenderThreadTime, float& OutGameThreadTime, float& OutGPUTime);
@@ -323,46 +304,27 @@ class UExtendedVarsBPLibrary : public UBlueprintFunctionLibrary
 	static EXTENDEDVARS_API void GetNetworkInfos(TArray<FString>& Out_Adapters, FString& OutHostname, FString& OutHostAddr, FString& OutMac);
 
 	UFUNCTION(BlueprintPure, meta = (DisplayName = "Helper IPConfig (Windows)", Keywords = "cmd, helper, ip, ipconfig"), Category = "Frozen Forest|Extended Variables|Windows|Hardware")
-	static EXTENDEDVARS_API bool HelperIPConfig(FString& OutCli, bool Get_MAC_Address);
+	static EXTENDEDVARS_API bool HelperIPConfig(FString& Out_Path, FString& Out_Params, bool Get_MAC_Address);
 
 	UFUNCTION(BlueprintPure, meta = (DisplayName = "Helper IP Ping (Windows)", Keywords = "cmd, helper, ip, ping"), Category = "Frozen Forest|Extended Variables|Windows|Hardware")
-	static EXTENDEDVARS_API bool HelperPing(FString& OutCli, int32 PingCount, const FString IPAdress);
+	static EXTENDEDVARS_API bool HelperPing(FString& Out_Path, FString& Out_Params, int32 PingCount, const FString IPAdress);
 
-	UFUNCTION(BlueprintPure, meta = (DisplayName = "Helper Get CPU from CMD (Windows)", Keywords = "cmd, helper, cpu"), Category = "Frozen Forest|Extended Variables|Windows|Hardware")
-	static EXTENDEDVARS_API bool HelperGetCPUFromCMD(FString& OutCli);
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Get CPU From PowerShell", Keywords = "powershell, helper, cpu"), Category = "Frozen Forest|Extended Variables|Windows|Hardware")
+	static EXTENDEDVARS_API void GetCpuFromPowershell(FString&Out_Path, FString& Out_Params);
 
-	UFUNCTION(BlueprintPure, meta = (DisplayName = "Helper Get GPU from CMD (Windows)", Keywords = "cmd, helper, gpu"), Category = "Frozen Forest|Extended Variables|Windows|Hardware")
-	static EXTENDEDVARS_API bool HelperGetGPUFromCMD(FString& OutCli);
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Get GPU From PowerShell", Keywords = "powershell, helper, gpu"), Category = "Frozen Forest|Extended Variables|Windows|Hardware")
+	static EXTENDEDVARS_API void GetGpuFromPowershell(FString& Out_Path, FString& Out_Params);
 
 #pragma endregion Profiling
 
 #pragma region External_Apps
 
-	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Run External App (Windows)", ToolTip = "It executes target application with game thread.", Keywords = "run,external,app"), Category = "Frozen Forest|Extended Variables|Windows|External")
-	static EXTENDEDVARS_API bool RunExternalApp(const FString AppPath, const FString Parameters, int32& OutProcessID, FString& StdOut, FString& StdErr);
+	static EXTENDEDVARS_API bool RunExternalApp_Internal(FJsonObjectWrapper& Out_Result, FString AppPath, const FString& Parameters, bool bIsAdmin = false, bool bSupportPipes = false);
 
-	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Run External App As Admin (Windows)", ToolTip = "It executes target application with game thread and admin privilages. Also it does not give STD values.", Keywords = "run,external,app,admin"), Category = "Frozen Forest|Extended Variables|Windows|External")
-	static EXTENDEDVARS_API bool RunExternalAppAdmin(const FString AppPath, const FString Parameters, int32& OutProcessID);
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Run External App", ToolTip = "Description.", Keywords = "run, external, app, execute"), Category = "Frozen Forest|Extended Variables|External Apps")
+	static EXTENDEDVARS_API void RunExternalApp(FDelegatePipeResult DelegatePipeResult, FString AppPath, const FString& Parameters, bool bIsAdmin = false, bool bSupportPipes = false);
 
-	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Run External App Async (Windows)", ToolTip = "It executes target application with its own thread but without admin privilages.", Keywords = "run,external,app,async"), Category = "Frozen Forest|Extended Variables|Windows	|External")
-	static EXTENDEDVARS_API bool RunExternalAppAsync(const FString AppPath, const FString Parameters, FString OptionalWorkingDirectory, bool Detached, bool Hidden, bool ReallyHidden, int32 Priority, int32& OutProcessID);
-
-	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Run Sub Process (Windows)", ToolTip = "Use only executable files (such as npm pkg executables). Write relative file path after Content.", Keywords = "start, external, server, subprocess"), Category = "Frozen Forest|Extended Variables|Windows|External")
-	static EXTENDEDVARS_API bool RunSubProcess(const FString SubProcessRelativePath, bool bIsDetached, bool bIsHidden, bool bIsReallyHidden, int32& OutProcessID, FString& SubProcessPathSave);
-
-	UFUNCTION(BlueprintPure, meta = (DisplayName = "Helper Task Kill by ProcessID (Windows)", Keywords = "cmd, helper, taskkill, pid, processid"), Category = "Frozen Forest|Extended Variables|Windows|External")
-	static EXTENDEDVARS_API bool HelperTaskKillByPID(FString& OutCli, int32 ProcessID);
-
-#pragma endregion External_Apps
-
-#pragma region Terminal
-
-	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Run Terminal Async (Windows)", ToolTip = "It supports CMD and Powershell and executes functions with FWindowsPlatformProcess::CreateProc.\nHide uses /c with true for both hide booleans;\nShowAfterKill uses /c with false for both hide booleans;\nShowLetItLive uses /k with false for both hide booleans.", Keywords = "run,terminal,async,powershell,cmd"), Category = "Frozen Forest|Extended Variables|Windows|Terminal")
-	static EXTENDEDVARS_API void RunTerminalAsync(ETerminalTarget TerminalTarget, ETerminalVisibility TerminalVisibility, EPipeThreadPriority PipeThreadPriority, const FString Command, const FString OptionalWorkingDirectory, int32 Priority, int32& OutProcessID, FDelegatePipeResult DelegatePipeResult);
-
-	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Run CMD Async (Windows)", ToolTip = "It supports only CMD and executes functions with Popen.\nUse /k (does not close CMD after finish.) or /c (clode CMD after finish) before functions.\nUse /d before disk change.\nIf you need to use chain arguments use & between them.", Keywords = "run,cmd,command, popen"), Category = "Frozen Forest|Extended Variables|Windows|Terminal")
-	static EXTENDEDVARS_API void RunCMDAsync(const FString Command, FDelegatePipeResult DelegatePipeResult);
-
-#pragma endregion Terminal
+	UFUNCTION(BlueprintPure, meta = (DisplayName = "Windows Terminal Helper", ToolTip = "Helper function to optimize commands for Windows Terminal.", Keywords = "windows, terminal, helper, external, app, execute"), Category = "Frozen Forest|Extended Variables|External Apps")
+	static EXTENDEDVARS_API void WindowsTerminalHelper(FString& Out_Path, FString& Out_Params, const FString& In_Params, bool bIsPowerShell = false);
 
 };
