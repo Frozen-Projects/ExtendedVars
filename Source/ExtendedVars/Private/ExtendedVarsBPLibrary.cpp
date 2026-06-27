@@ -1340,7 +1340,7 @@ void UExtendedVarsBPLibrary::TRT2D_To_T2D(FDelegateTexture2D Delegate_T2D, UText
                 .SetInitialState(ERHIAccess::CopySrc);
 
             // Copy Texture Render Target 2D.
-            FTextureRHIRef CopiedTextureResource = RHICreateTexture(Desc);
+            FTextureRHIRef CopiedTextureResource = RHICmdList.CreateTexture(Desc);
             FRHICopyTextureInfo CopyTextureInfo;
             RHICmdList.CopyTexture(In_TRT_2D->GetResource()->GetTextureRHI(), CopiedTextureResource, CopyTextureInfo);
 
@@ -1619,8 +1619,8 @@ void UExtendedVarsBPLibrary::Export_Texture_Bytes_RT(FDelegateImageBuffer Delega
                 .SetExtent(Size_X, Size_Y)
                 .SetFormat(PixelFormat)
                 .SetInitialState(ERHIAccess::CopySrc);
-            FTextureRHIRef CopiedTextureRHI = RHICreateTexture(Desc);
-
+            
+            FTextureRHIRef CopiedTextureRHI = RHICmdList.CreateTexture(Desc);
             FTextureRHIRef TargetTextureRHI = nullptr;
 
             if (bIsTexture2D)
@@ -2293,7 +2293,6 @@ void UExtendedVarsBPLibrary::GetMonitorNamesFromPowershell(FString& Out_Path, FS
 void UExtendedVarsBPLibrary::GetMonitorInfos(FJsonObjectWrapper& OutMonitorInfos)
 {
 #ifdef _WIN64
-
     DISPLAY_DEVICE AdapterDevices;
     AdapterDevices.cb = sizeof(AdapterDevices);
     int32 AdapterIndex = 0;
@@ -2324,9 +2323,6 @@ void UExtendedVarsBPLibrary::GetMonitorInfos(FJsonObjectWrapper& OutMonitorInfos
     }
 
     OutMonitorInfos.JsonObject->SetArrayField(TEXT("Details"), Details);
-
-#else
-    return;
 #endif
 }
 
@@ -2441,11 +2437,6 @@ void UExtendedVarsBPLibrary::GetNetworkInfos(TArray<FString>& Out_Adapters, FStr
 
         return;
     }
-
-#elif __ANDROID__
-
-    // https://stackoverflow.com/questions/36543720/how-to-get-mac-address-in-android-native-code
-
 #endif
 }
 
