@@ -9,7 +9,6 @@ public class ExtendedVars : ModuleRules
 	public ExtendedVars(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
-
         bUseUnity = false;
 		
 		PublicDependencyModuleNames.AddRange(
@@ -17,19 +16,18 @@ public class ExtendedVars : ModuleRules
 			{
 				"Core",
                 "MediaAssets",
-            }
-			);
+				"UMG",
+                "Slate",
+                "SlateCore",
+            });
 			
 		PrivateDependencyModuleNames.AddRange(
 			new string[]
 			{
 				"CoreUObject",
 				"Engine",
-				"Slate",
-				"SlateCore",
                 "RHI",
 				"RenderCore",
-				"UMG",
                 "ImageWrapper",
                 "ApplicationCore",
                 "Networking",
@@ -37,14 +35,6 @@ public class ExtendedVars : ModuleRules
                 "Json",
                 "JsonUtilities",
                 "JsonBlueprintUtilities",
-            }
-			);
-		
-		DynamicallyLoadedModuleNames.AddRange(
-			new string[]
-			{
-				// ... add any modules that your module loads dynamically here ...
-			}
-			);
+            });
 	}
 }
