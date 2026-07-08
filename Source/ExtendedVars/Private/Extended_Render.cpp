@@ -1,5 +1,66 @@
 #include "Extended_BPLib.h"
 
+namespace
+{
+    void FireResult(const FContextRef& Ctx, bool bSuccess, FString ErrorCode, TArray<uint8>&& Bytes)
+    {
+        AsyncTask(ENamedThreads::GameThread, [Ctx, bSuccess, ErrorCode = MoveTemp(ErrorCode), CopyRef = MoveTemp(Bytes)]() mutable
+            {
+                Ctx->OnComplete.ExecuteIfBound(bSuccess, ErrorCode, CopyRef);
+            }
+        );
+    }
+
+    bool PackSurface(const void* Data, int32 RowPitchInPixels, FIntPoint Size, EPixelFormat Format, TArray<uint8>& Out, FString& OutError)
+    {
+        const int32 W = Size.X;
+        const int32 H = Size.Y;
+      
+        if (W <= 0 || H <= 0 || Data == nullptr)
+        {
+            OutError = TEXT("EmptySurface");
+            return false;
+        }
+
+        const FPixelFormatInfo& Info = GPixelFormats[Format];
+
+        if (Info.BlockSizeX != 1 || Info.BlockSizeY != 1 || Info.BlockSizeZ != 1)
+        {
+            OutError = TEXT("CompressedFormatUnsupported");
+            return false;
+        }
+
+        if (RowPitchInPixels < W)
+        {
+            OutError = TEXT("BadRowPitch");
+            return false;
+        }
+
+        const SIZE_T BytesPerPixel = static_cast<SIZE_T>(Info.BlockBytes);
+        const SIZE_T SrcPitchBytes = static_cast<SIZE_T>(RowPitchInPixels) * BytesPerPixel;
+        const SIZE_T DstPitchBytes = static_cast<SIZE_T>(W) * BytesPerPixel;
+
+        const int64 TotalBytes = static_cast<int64>(DstPitchBytes) * H;
+        if (TotalBytes > static_cast<int64>(MAX_int32))
+        {
+            OutError = TEXT("TooLarge");
+            return false;
+        }
+
+        Out.SetNumUninitialized(static_cast<int32>(TotalBytes));
+
+        const uint8* Src = static_cast<const uint8*>(Data);
+        uint8* Dst = Out.GetData();
+        for (int32 Y = 0; Y < H; ++Y)
+        {
+            FMemory::Memcpy(Dst + Y * DstPitchBytes, Src + Y * SrcPitchBytes, DstPitchBytes);
+        }
+
+        OutError.Reset();
+        return true;
+    }
+}
+
 EGammaSpace UExtendedVarsBPLibrary::ConvertGammaSpace(EGammaSpaceBp InGammaSpaceBp)
 {
     switch (InGammaSpaceBp)
@@ -618,6 +679,82 @@ bool UExtendedVarsBPLibrary::Export_T2D_Bytes(TArray<uint8>& Out_Array, FString&
     Texture->UpdateResource();
 
     return true;
+}
+
+void UExtendedVarsBPLibrary::Export_Texture_Bytes_GPU(FDelegateImageBuffer DelegateImageBuffer, UTexture* TargetTexture)
+{
+    if (!IsValid(TargetTexture))
+    {
+        const FString ErrorLog = TEXT("Texture not valid.");
+        DelegateImageBuffer.ExecuteIfBound(false, ErrorLog, TArray<uint8>());
+        return;
+    }
+
+    FTextureResource* Resource = TargetTexture->GetResource();
+
+    if (Resource == nullptr)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("ReadTexturePixelsAsync: '%s' has no render resource (not initialized/streamed yet)."), *TargetTexture->GetName());
+        DelegateImageBuffer.ExecuteIfBound(false, TEXT("Texture has no render resource."), TArray<uint8>());
+        return;
+    }
+
+    FContextRef Ctx = MakeShared<FFF_TextureReadbackContext, ESPMode::ThreadSafe>();
+    Ctx->OnComplete = DelegateImageBuffer;
+    Ctx->Readback = MakeUnique<FRHIGPUTextureReadback>(TEXT("FF_TextureReadback"));
+
+    ENQUEUE_RENDER_COMMAND(FF_EnqueueTextureReadback)([Ctx, Resource](FRHICommandListImmediate& RHICmdList)
+        {
+            FRHITexture* TexRHI = Resource->GetTextureRHI();
+            
+            if (TexRHI == nullptr)
+            {
+                FireResult(Ctx, false, TEXT("NoRHITexture"), TArray<uint8>());
+                return;
+            }
+
+            Ctx->Size = TexRHI->GetSizeXY();
+            Ctx->Format = TexRHI->GetFormat();
+            Ctx->Readback->EnqueueCopy(RHICmdList, TexRHI, FResolveRect(0, 0, Ctx->Size.X, Ctx->Size.Y));
+        });
+
+    // 2) Poll the fence on the game thread; when ready, map+pack on the render thread.
+    FTSTicker::GetCoreTicker().AddTicker(FTickerDelegate::CreateLambda([Ctx](float /*DeltaTime*/) -> bool
+        {
+            if (!Ctx->Readback->IsReady())
+            {
+                if (++Ctx->FramesWaited > FFF_TextureReadbackContext::MaxFramesToWait)
+                {
+                    UE_LOG(LogTemp, Warning, TEXT("FF_TextureReadback: timed out waiting for GPU fence."));
+                    FireResult(Ctx, false, TEXT("Timeout"), TArray<uint8>());
+                    return false;
+                }
+
+                return true;
+            }
+
+            // Lock/Unlock touch the staging resource -> do it on the render thread.
+            ENQUEUE_RENDER_COMMAND(FF_LockTextureReadback)([Ctx](FRHICommandListImmediate& /*RHICmdList*/)
+                {
+                    int32 RowPitchInPixels = 0;
+                    void* Data = Ctx->Readback->Lock(RowPitchInPixels);
+
+                    TArray<uint8> Bytes;
+                    FString       Error;
+                    const bool    bOk = PackSurface(Data, RowPitchInPixels, Ctx->Size, Ctx->Format, Bytes, Error);
+
+                    Ctx->Readback->Unlock();
+
+                    if (!bOk)
+                    {
+                        UE_LOG(LogTemp, Warning, TEXT("FF_TextureReadback failed (%s), format %d."), *Error, static_cast<int32>(Ctx->Format));
+                    }
+
+                    FireResult(Ctx, bOk, MoveTemp(Error), MoveTemp(Bytes));
+                });
+
+            return false; // stop ticking; result delivered from the render command above
+        }), 0.0f);
 }
 
 void UExtendedVarsBPLibrary::Export_Texture_Bytes_RT(FDelegateImageBuffer DelegateImageBuffer, UTexture* TargetTexture)
