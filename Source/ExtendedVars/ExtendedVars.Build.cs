@@ -16,9 +16,6 @@ public class ExtendedVars : ModuleRules
 			{
 				"Core",
                 "MediaAssets",
-				"UMG",
-                "Slate",
-                "SlateCore",
             });
 			
 		PrivateDependencyModuleNames.AddRange(
@@ -35,6 +32,9 @@ public class ExtendedVars : ModuleRules
                 "Json",
                 "JsonUtilities",
                 "JsonBlueprintUtilities",
+                "UMG",
+                "Slate",
+                "SlateCore",
             });
 	}
 }
