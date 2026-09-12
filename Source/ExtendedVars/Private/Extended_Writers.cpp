@@ -4,13 +4,13 @@ bool UExtendedVarsBPLibrary::Write_File_To_Path(FString& Out_Code, TArray<uint8>
 {
     if (In_Path.IsEmpty())
     {
-        Out_Code = "Path is empty.";
+        Out_Code = TEXT("Path is empty.");
         return false;
     }
 
     if (In_Bytes.IsEmpty() || !In_Bytes.GetData())
     {
-        Out_Code = "Bytes are empty.";
+        Out_Code = TEXT("Bytes are empty.");
         return false;
     }
 
@@ -22,38 +22,38 @@ bool UExtendedVarsBPLibrary::Write_File_To_Path(FString& Out_Code, TArray<uint8>
         FString HeaderExtension;
 
         // JPG
-        if (UExtendedVarsBPLibrary::Bytes_x86_To_Hex(In_Bytes, 0, 1, false) == "ffd8" && UExtendedVarsBPLibrary::Bytes_x86_To_Hex(In_Bytes, (In_Bytes.Num() - 2), (In_Bytes.Num() - 1), false) == "ffd9")
+        if (UExtendedVarsBPLibrary::Bytes_x86_To_Hex(In_Bytes, 0, 1, false) == TEXT("ffd8") && UExtendedVarsBPLibrary::Bytes_x86_To_Hex(In_Bytes, (In_Bytes.Num() - 2), (In_Bytes.Num() - 1), false) == TEXT("ffd9"))
         {
-            HeaderExtension = "jpg";
+            HeaderExtension = TEXT("jpg");
         }
 
         // BMP
-        else if (UExtendedVarsBPLibrary::Bytes_x86_To_Hex(In_Bytes, 0, 1, false) == "424d")
+        else if (UExtendedVarsBPLibrary::Bytes_x86_To_Hex(In_Bytes, 0, 1, false) == TEXT("424d"))
         {
-            HeaderExtension = "bmp";
+            HeaderExtension = TEXT("bmp");
         }
 
         // PNG
-        else if (UExtendedVarsBPLibrary::Bytes_x86_To_Hex(In_Bytes, 0, 7, false) == "89504e470d0a1a0a")
+        else if (UExtendedVarsBPLibrary::Bytes_x86_To_Hex(In_Bytes, 0, 7, false) == TEXT("89504e470d0a1a0a"))
         {
-            HeaderExtension = "png";
+            HeaderExtension = TEXT("png");
         }
 
         // PDF
-        else if (UExtendedVarsBPLibrary::Bytes_x86_To_Hex(In_Bytes, 0, 3, false) == "25504446")
+        else if (UExtendedVarsBPLibrary::Bytes_x86_To_Hex(In_Bytes, 0, 3, false) == TEXT("25504446"))
         {
-            HeaderExtension = "pdf";
+            HeaderExtension = TEXT("pdf");
         }
 
         // ZIP
-        else if (UExtendedVarsBPLibrary::Bytes_x86_To_Hex(In_Bytes, 0, 3, false) == "504b0304")
+        else if (UExtendedVarsBPLibrary::Bytes_x86_To_Hex(In_Bytes, 0, 3, false) == TEXT("504b0304"))
         {
-            HeaderExtension = "zip";
+            HeaderExtension = TEXT("zip");
         }
 
         else
         {
-            Out_Code = "Unknown file type.";
+            Out_Code = TEXT("Unknown file type.");
             return false;
         }
 
@@ -62,6 +62,6 @@ bool UExtendedVarsBPLibrary::Write_File_To_Path(FString& Out_Code, TArray<uint8>
 
     const bool bIsSuccess = FFileHelper::SaveArrayToFile(In_Bytes, *In_Path);
 
-    Out_Code = bIsSuccess ? "File saved successfully." : "Failed to save file.";
+    Out_Code = bIsSuccess ? TEXT("File saved successfully.") : TEXT("Failed to save file.");
     return bIsSuccess;
 }
