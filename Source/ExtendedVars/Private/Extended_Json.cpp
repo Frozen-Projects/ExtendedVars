@@ -38,6 +38,26 @@ FJsonObjectWrapper UExtendedVarsBPLibrary::MapToJson(const TMap<FString, FString
     return ResultJson;
 }
 
+FJsonObjectWrapper UExtendedVarsBPLibrary::ArrayToJson(const TArray<FJsonObjectWrapper>& In_Array, const FString& FieldName)
+{
+    FJsonObjectWrapper ResultJson;
+
+    if (In_Array.IsEmpty())
+    {
+        return ResultJson;
+    }
+
+    TArray<TSharedPtr<FJsonValue>> JsonArray;
+    for (const FJsonObjectWrapper& EachObject : In_Array)
+    {
+        JsonArray.Add(MakeShared<FJsonValueObject>(EachObject.JsonObject));
+    }
+
+    ResultJson.JsonObject->SetArrayField(FieldName, JsonArray);
+    
+    return ResultJson;
+}
+
 FString UExtendedVarsBPLibrary::BeautifyJson(FString In_Json)
 {
     TSharedPtr<FJsonObject> JsonObject = MakeShareable(new FJsonObject());

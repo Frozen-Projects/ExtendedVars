@@ -145,6 +145,9 @@ class EXTENDEDVARS_API UExtendedVarsBPLibrary : public UBlueprintFunctionLibrary
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Merge Map to Json", Keywords = "merge, tmap, map, to, json, convert"), Category = "Frozen Forest|Extended Variables|JSON")
 	static FJsonObjectWrapper MapToJson(const TMap<FString, FString>& In_Map);
 
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Merge Array to Json", Keywords = "merge, tarray, array, to, json, convert"), Category = "Frozen Forest|Extended Variables|JSON")
+	static FJsonObjectWrapper ArrayToJson(const TArray<FJsonObjectWrapper>& In_Array, const FString& FieldName);
+
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Beautify Json", Keywords = "string, fstring, beautify, json"), Category = "Frozen Forest|Extended Variables|JSON")
 	static FString BeautifyJson(FString In_Json);
 
