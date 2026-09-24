@@ -314,7 +314,7 @@ class EXTENDEDVARS_API UExtendedVarsBPLibrary : public UBlueprintFunctionLibrary
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Get CPU", Keywords = "get, cpu"), Category = "Frozen Forest|Extended Variables|Windows|Hardware")
 	static void GetCPU(FString& CPUBrand, int32& CoreCount, int32& ThreadCount);
 
-	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Get App Performance Metrics", ToolTip = "Description.", Keywords = "get, app, performance, metrics, time, cpu, gpu, render, game"), Category = "Frozen Forest|Extended Variables|Windows|Hardware")
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Get App Performance Metrics", Keywords = "get, app, performance, metrics, time, cpu, gpu, render, game"), Category = "Frozen Forest|Extended Variables|Windows|Hardware")
 	static void GetAppPerformanceMetrics(int32& OutFPS, float& OutRenderThreadTime, float& OutGameThreadTime, float& OutGPUTime);
 
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Get Network Infos", Keywords = "helper, get, device, name, local, ip, host, network"), Category = "Frozen Forest|Extended Variables|Windows|Hardware")
@@ -331,6 +331,9 @@ class EXTENDEDVARS_API UExtendedVarsBPLibrary : public UBlueprintFunctionLibrary
 
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Send Ping with PowerShell", Keywords = "helper, send, ping, powershell"), Category = "Frozen Forest|Extended Variables|Windows|Hardware")
 	static void SendPingWithPowershell(FString& Out_Path, FString& Out_Params, const FString IPAddress, int32 PingCount = 4, uint8 PackageBytes = 32);
+
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Check If CUDA Available", Keywords = "check, cuda, available"), Category = "Frozen Forest|Extended Variables|Windows|Hardware")
+	static bool CheckIfCudaAvailable(TArray<FString>& Out_GPUs);
 
 #pragma endregion Profiling
 

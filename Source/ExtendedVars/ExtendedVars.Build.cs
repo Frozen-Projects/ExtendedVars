@@ -1,5 +1,3 @@
-// Some copyright should be here...
-
 using System;
 using System.IO;
 using UnrealBuildTool;

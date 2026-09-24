@@ -51,7 +51,7 @@ bool UExtendedVarsBPLibrary::RunExternalApp_Internal(FJsonObjectWrapper& Out_Cod
 
 void UExtendedVarsBPLibrary::WindowsTerminalHelper(FString& Out_Path, FString& Out_Params, const FString& In_Params, bool bIsPowerShell)
 {
-    Out_Path = bIsPowerShell ? TEXT("C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe") : TEXT("C:\\Windows\\System32\\cmd.exe");
+    Out_Path = bIsPowerShell ? TEXT("C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe") : TEXT("cmd.exe");
     Out_Params = bIsPowerShell ? FString::Printf(TEXT("-Command %s"), *In_Params) : FString::Printf(TEXT("/c %s"), *In_Params);
 }
 
