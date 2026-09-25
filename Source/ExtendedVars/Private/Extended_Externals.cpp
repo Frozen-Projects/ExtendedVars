@@ -94,7 +94,6 @@ void UExtendedVarsBPLibrary::RunExternalAppWithPipes(FDelegateTerminalResult Del
 
             void* PipeRead;
             void* PipeWrite;
-            int32 ProcessId = 0;
 
             if (!FWindowsPlatformProcess::CreatePipe(PipeRead, PipeWrite))
             {
@@ -108,6 +107,7 @@ void UExtendedVarsBPLibrary::RunExternalAppWithPipes(FDelegateTerminalResult Del
                 return;
             }
 
+            int32 ProcessId = 0;
             FProcHandle Process = FPlatformProcess::CreateProc(*AppPath, *Parameters, false, true, true, (uint32_t*)&ProcessId, 0, nullptr, PipeWrite, nullptr);
 
             if (!Process.IsValid())
