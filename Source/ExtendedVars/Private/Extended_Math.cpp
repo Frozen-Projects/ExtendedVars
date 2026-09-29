@@ -236,3 +236,28 @@ bool UExtendedVarsBPLibrary::GetDateTimeWithZone(FString& Out_Print, FString& Ou
 }
 
 #pragma endregion Time_Group
+
+#pragma region Vectors
+
+bool UExtendedVarsBPLibrary::IsVectorsParallel(const FVector V1, const FVector V2, float ParallelCosineThreshold)
+{
+    FVector Normalized_V1 = UKismetMathLibrary::Normal(V1);
+    FVector Normalized_V2 = UKismetMathLibrary::Normal(V2);
+
+    return FVector::Parallel(Normalized_V1, Normalized_V2, ParallelCosineThreshold);
+}
+
+bool UExtendedVarsBPLibrary::IsVectorsCoincident(const FVector V1, const FVector V2, float ParallelCosineThreshold)
+{
+    FVector Normalized_V1 = UKismetMathLibrary::Normal(V1);
+    FVector Normalized_V2 = UKismetMathLibrary::Normal(V2);
+
+    return FVector::Coincident(Normalized_V1, Normalized_V2, ParallelCosineThreshold);
+}
+
+void UExtendedVarsBPLibrary::AddLocalRotWithQuat(USceneComponent* TargetObject, const FVector RotationAxis, float RotationAngle)
+{
+    TargetObject->AddLocalRotation(FQuat(RotationAxis, FMath::DegreesToRadians(RotationAngle)));
+}
+
+#pragma endregion Vectors

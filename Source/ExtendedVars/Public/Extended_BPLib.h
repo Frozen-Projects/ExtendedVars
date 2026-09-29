@@ -351,4 +351,18 @@ class EXTENDEDVARS_API UExtendedVarsBPLibrary : public UBlueprintFunctionLibrary
 	static void WindowsTerminalHelper(FString& Out_Path, FString& Out_Params, const FString& In_Params, bool bIsPowerShell = false);
 
 #pragma endregion External_Apps
+
+# pragma region Vectors
+
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Is Vector Parallel", Keywords = "get, project, name"), Category = "Frozen Forest|Extended Variables|Vectors")
+	static bool IsVectorsParallel(const FVector V1, const FVector V2, float ParallelCosineThreshold);
+
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Is Vector Coincident", Keywords = "get, project, name"), Category = "Frozen Forest|Extended Variables|Vectors")
+	static bool IsVectorsCoincident(const FVector V1, const FVector V2, float ParallelCosineThreshold);
+
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Add Local Rotation With Quat", Keywords = "add, local, rotation, quaternion, quat"), Category = "Frozen Forest|Extended Variables|Vectors")
+	static void AddLocalRotWithQuat(USceneComponent* TargetObject, const FVector RotationAxis, float RotationAngle);
+
+#pragma endregion Vectors
+
 };
