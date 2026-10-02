@@ -27,4 +27,5 @@ public:
     
     static std::array<uint8_t, 16> generateBytes();
     static std::string generateString();
+
 };

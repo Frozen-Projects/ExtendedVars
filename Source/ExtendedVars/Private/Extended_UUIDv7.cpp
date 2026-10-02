@@ -1,4 +1,4 @@
-#include "Extended_UUIDv7.h"
+#include "Extended_BPLib.h"
 
 uint64_t FExtended_UUIDv7::getTimestampMs()
 {
@@ -67,4 +67,16 @@ std::string FExtended_UUIDv7::generateString()
     }
 
     return ss.str();
+}
+
+FString UExtendedVarsBPLibrary::GenerateUUIDv7()
+{
+	const std::string uuidStr = FExtended_UUIDv7::generateString();
+    
+	auto Converter = StringCast<UTF8CHAR>(uuidStr.c_str());
+
+    FString Result;
+	Result.AppendChars(Converter.Get(), Converter.Length());
+
+	return Result;
 }

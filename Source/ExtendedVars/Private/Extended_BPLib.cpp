@@ -1,5 +1,3 @@
-// Copyright Epic Games, Inc. All Rights Reserved.
-
 #include "Extended_BPLib.h"
 #include "ExtendedVars.h"
 

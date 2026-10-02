@@ -4,15 +4,13 @@
 
 #include "Kismet/BlueprintFunctionLibrary.h"
 
-// Custom Includes.
-
-// It carrys Extended_Includes.h
-#include "Extended_Bytes.h"	
+#include "Extended_Bytes.h"			// It carrys Extended_Includes.h
 #include "Extended_Enums.h"
 #include "Extended_Structs.h"
 #include "Extended_Delegates.h"
 #include "Extended_Fonts.h"
 #include "Extended_Files.h"
+#include "Extended_UUIDv7.h"
 
 #include "Extended_BPLib.generated.h"
 
@@ -364,5 +362,12 @@ class EXTENDEDVARS_API UExtendedVarsBPLibrary : public UBlueprintFunctionLibrary
 	static void AddLocalRotWithQuat(USceneComponent* TargetObject, const FVector RotationAxis, float RotationAngle);
 
 #pragma endregion Vectors
+
+#pragma region UUID
+	
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Generate UUIDv7", Keywords = "generate uuid, uuidv7, unique, identifier"), Category = "Frozen Forest|Extended Variables|UUID")
+	static FString GenerateUUIDv7();
+
+#pragma endregion UUID
 
 };
