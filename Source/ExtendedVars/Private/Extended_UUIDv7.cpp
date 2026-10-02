@@ -1,3 +1,4 @@
+#include "Extended_UUIDv7.h"
 #include "Extended_BPLib.h"
 
 uint64_t FExtended_UUIDv7::getTimestampMs()
