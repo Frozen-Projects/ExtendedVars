@@ -368,6 +368,9 @@ class EXTENDEDVARS_API UExtendedVarsBPLibrary : public UBlueprintFunctionLibrary
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Generate UUIDv7", Keywords = "generate uuid, uuidv7, unique, identifier"), Category = "Frozen Forest|Extended Variables|UUID")
 	static FString GenerateUUIDv7();
 
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Generate UUIDv7 Bytes", Keywords = "generate uuid, uuidv7, unique, identifier, bytes"), Category = "Frozen Forest|Extended Variables|UUID")
+	static TArray<uint8> GenerateUUIDv7Bytes();
+
 #pragma endregion UUID
 
 };

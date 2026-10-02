@@ -80,3 +80,11 @@ FString UExtendedVarsBPLibrary::GenerateUUIDv7()
 
 	return Result;
 }
+
+TArray<uint8> UExtendedVarsBPLibrary::GenerateUUIDv7Bytes()
+{
+	std::array<uint8_t, 16> bytes = FExtended_UUIDv7::generateBytes();
+	TArray<uint8> Result;
+	Result.Append(bytes.data(), bytes.size());
+	return Result;
+}
