@@ -372,4 +372,11 @@ class EXTENDEDVARS_API UExtendedVarsBPLibrary : public UBlueprintFunctionLibrary
 
 #pragma endregion UUID
 
+#pragma region Widgets
+
+	UFUNCTION(BlueprintPure, meta = (DisplayName = "Get Active Children Count", Keywords = "get, active, children, count"), Category = "Frozen Forest|Extended Variables|Widgets")
+	static int32 GetActiveChildrenCount(UPanelWidget* PanelWidget);
+
+#pragma endregion Widgets
+
 };
