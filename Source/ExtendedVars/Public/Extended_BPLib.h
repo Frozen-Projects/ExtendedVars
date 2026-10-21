@@ -139,19 +139,22 @@ class EXTENDEDVARS_API UExtendedVarsBPLibrary : public UBlueprintFunctionLibrary
 
 	static bool StringToJsonObjectArray(TArray<TSharedPtr<FJsonValue>>& OutArray, const FString& InJsonArrayString);
 
-	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Merge Map to Json", Keywords = "merge, tmap, map, to, json, convert"), Category = "Frozen Forest|Extended Variables|JSON")
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Map To JSON", Keywords = "merge, tmap, map, to, json, convert"), Category = "Frozen Forest|Extended Variables|JSON")
 	static FJsonObjectWrapper MapToJson(const TMap<FString, FString>& In_Map);
 
-	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Merge Array to Json", Keywords = "merge, tarray, array, to, json, convert"), Category = "Frozen Forest|Extended Variables|JSON")
-	static FJsonObjectWrapper ArrayToJson(const TArray<FJsonObjectWrapper>& In_Array, const FString& FieldName);
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Object Array to JSON", Keywords = "merge, tarray, array, to, json, convert"), Category = "Frozen Forest|Extended Variables|JSON")
+	static FJsonObjectWrapper ObjectArrayToJson(const TArray<FJsonObjectWrapper>& In_Array, const FString& FieldName);
 
-	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Beautify Json", Keywords = "string, fstring, beautify, json"), Category = "Frozen Forest|Extended Variables|JSON")
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "String Array to JSON", Keywords = "merge, tarray, array, to, json, convert"), Category = "Frozen Forest|Extended Variables|JSON")
+	static FJsonObjectWrapper StringArrayToJson(const TArray<FString>& In_Array, const FString& FieldName);
+
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Beautify JSON", Keywords = "string, fstring, beautify, json"), Category = "Frozen Forest|Extended Variables|JSON")
 	static FString BeautifyJson(FString In_Json);
 
-	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Print Json Object Array", Keywords = "string, fstring, json, object, array"), Category = "Frozen Forest|Extended Variables|JSON")
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Print JSON Object Array", Keywords = "string, fstring, json, object, array"), Category = "Frozen Forest|Extended Variables|JSON")
 	static FString PrintJsonObjectArray(TArray<FJsonObjectWrapper> In_Objects);
 
-	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Get Element From Json Object Array", Keywords = "json, get, object, array, element"), Category = "Frozen Forest|Extended Variables|JSON")
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Get Element From JSON Object Array", Keywords = "json, get, object, array, element"), Category = "Frozen Forest|Extended Variables|JSON")
 	static FJsonObjectWrapper GetElementFromJsonObjectArray(TArray<FJsonObjectWrapper> In_Objects, int32 Index);
 
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Get Object Array Field From String", Keywords = "json, get, object, array, field, from, string"), Category = "Frozen Forest|Extended Variables|JSON")
