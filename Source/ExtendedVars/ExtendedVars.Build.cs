@@ -1,5 +1,3 @@
-using System;
-using System.IO;
 using UnrealBuildTool;
 
 public class ExtendedVars : ModuleRules
@@ -7,7 +5,6 @@ public class ExtendedVars : ModuleRules
 	public ExtendedVars(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
-        bUseUnity = false;
 		
 		PublicDependencyModuleNames.AddRange(
 			new string[]
